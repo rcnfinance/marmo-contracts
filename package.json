@@ -9,8 +9,7 @@
     "contracts",
     "test"
   ],
-  "scripts": {
-  },
+  "scripts": {},
   "repository": {
     "type": "git",
     "url": "git+https://github.com/ripio/marmo-contracts"
