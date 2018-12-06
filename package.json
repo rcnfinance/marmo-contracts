@@ -1,0 +1,37 @@
+{
+  "name": "marmo-contracts",
+  "version": "0.1.0",
+  "description": "Ethereum relay contract",
+  "license": "MIT",
+  "main": "",
+  "files": [
+    "build",
+    "contracts",
+    "test"
+  ],
+  "scripts": {
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ripio/marmo-contracts"
+  },
+  "keywords": [
+    "Ethereum",
+    "Relay",
+    "Contracts"
+  ],
+  "bugs": {
+    "url": "https://github.com/ripio/marmo-contracts/issues"
+  },
+  "devDependencies": {
+    "bignumber.js": "github:frozeman/bignumber.js-nolookahead",
+    "ganache-cli": "6.1.7",
+    "truffle": "5.0.0-beta.2",
+    "web3": "1.0.0-beta.36",
+    "web3-utils": "^1.0.0-beta.36"
+  },
+  "dependencies": {
+    "openzeppelin-solidity": "^2.0.0",
+    "solc": "^0.5.0"
+  }
+}
