@@ -24,13 +24,14 @@
   },
   "devDependencies": {
     "bignumber.js": "github:frozeman/bignumber.js-nolookahead",
+    "ethereumjs-abi": "^0.6.5",
     "ganache-cli": "6.1.7",
+    "random-buffer": "*",
     "truffle": "5.0.0-beta.2",
     "web3": "1.0.0-beta.36",
     "web3-utils": "^1.0.0-beta.36"
   },
   "dependencies": {
-    "openzeppelin-solidity": "^2.0.0",
     "solc": "^0.5.0"
   }
 }
