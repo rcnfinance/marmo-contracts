@@ -12,13 +12,15 @@ contract Proxy {
     constructor(address _instance) public {
         require(_instance != address(0), "Invalid marmo instance address provided");
         assembly {
-            sstore(0x7050c9e0f4ca769c69bd3a8ef740bc37934f8e2c036e5a723fd8ee048ed3f8c2, _instance)
+            // keccak256('rcn.marmo.proxy')
+            sstore(0x3d9b1ee906add9fda2547fb4cd1c5758e541fe5481baf32e98bbd15d09a0c406, _instance)
         }
     }
 
     function () external payable {
         assembly {
-            let instance := sload(0x7050c9e0f4ca769c69bd3a8ef740bc37934f8e2c036e5a723fd8ee048ed3f8c2)
+            // keccak256('rcn.marmo.proxy')
+            let instance := sload(0x3d9b1ee906add9fda2547fb4cd1c5758e541fe5481baf32e98bbd15d09a0c406)
             // Copy msg.data. We take full control of memory in this inline assembly
             // block because it will not return to Solidity code. We overwrite the
             // Solidity scratch pad at memory position 0.
