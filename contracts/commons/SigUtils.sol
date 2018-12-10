@@ -1,13 +1,12 @@
 pragma solidity ^0.5.0;
 
-library SignatureDeserializer {
-    
+library SigUtils {
     /**
       @dev Recovers address who signed the message 
       @param _hash operation ethereum signed message hash
       @param _signature message `hash` signature  
     */
-    function recoverKey (
+    function ecrecover2 (
         bytes32 _hash, 
         bytes memory _signature
     ) internal pure returns (address) {
@@ -27,5 +26,4 @@ library SignatureDeserializer {
 
         return ecrecover(_hash, v, r, s);
     }
-
 }
