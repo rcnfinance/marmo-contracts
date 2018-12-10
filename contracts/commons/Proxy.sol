@@ -6,7 +6,7 @@ pragma solidity ^0.5.0;
 contract Proxy {
     function () external payable {
         assembly {
-            let k := 0x7050c9e0f4ca769c69bd3a8ef740bc37934f8e2c036e5a723fd8ee048ed3f8c2
+            let k := 0x3d9b1ee906add9fda2547fb4cd1c5758e541fe5481baf32e98bbd15d09a0c406
             let instance := sload(k)
             if iszero(instance) {
                 sstore(k, calldataload(0))
