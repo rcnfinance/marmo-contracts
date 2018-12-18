@@ -76,7 +76,7 @@ contract Marmo is Ownable {
         require(!isCanceled[id], "Transaction was canceled");
         require(relayerOf[id] == address(0), "Transaction already relayed");
         require(dependenciesSatisfied(_dependencies), "Parent relay not found");
-        require(msg.sender == owner || msg.sender == SigUtils.ecrecover2(id, _signature), "Invalid signature");
+        require(msg.sender == owner || owner == SigUtils.ecrecover2(id, _signature), "Invalid signature");
 
         require(gasleft() > _minGasLimit);
         (success, data) = _to.call.value(_value)(_data);
