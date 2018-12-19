@@ -5,13 +5,36 @@ import "./commons/Proxy.sol";
 
 contract MarmoFactory {
     // Compiled Proxy.sol
-    bytes public constant PROXY_BYTECODE = hex"6080604052348015600f57600080fd5b5060838061001e6000396000f3fe60806040527f7050c9e0f4ca769c69bd3a8ef740bc37934f8e2c036e5a723fd8ee048ed3f8c280548015156034576000358255005b3660008037600080366000845af43d6000803e8080156052573d6000f35b3d6000fdfea165627a7a72305820cb39008bb4c53fbfeb0e7d4b29bc7c146e41d74a283816b04727025b0d2051e00029";
-    bytes32 public constant CODE_HASH = keccak256(PROXY_BYTECODE);
+    bytes public constant BYTECODE_1 = hex"6080604052348015600f57600080fd5b50606780601d6000396000f3fe6080604052366000803760008036600073";
+    bytes public constant BYTECODE_2 = hex"5af43d6000803e8015156036573d6000fd5b3d6000f3fea165627a7a7230582033b260661546dd9894b994173484da72335f9efc37248d27e6da483f15afc1350029";
 
+    bytes public bytecode;
+    bytes32 public hash;
+    
     address public marmoSource;
 
     constructor(address _marmo) public {
+        bytecode = _concat(_concat(BYTECODE_1, abi.encodePacked(_marmo)), BYTECODE_2);
+        hash = keccak256(bytecode);
         marmoSource = _marmo;
+    }
+    
+    function _concat(bytes memory _baseBytes, bytes memory _valueBytes) internal pure returns (bytes memory _out) {
+        uint256 blength = _baseBytes.length;
+        uint256 vlength = _valueBytes.length;
+
+        _out = new bytes(blength + vlength);
+
+        uint256 i;
+        uint256 j;
+
+        for(i = 0; i < blength; i++) {
+            _out[j++] = _baseBytes[i];
+        }
+
+        for(i = 0; i < vlength; i++) {
+            _out[j++] = _valueBytes[i];
+        }
     }
     
     function marmoOf(address _signer) external view returns (address) {
@@ -22,7 +45,7 @@ contract MarmoFactory {
                         byte(0xff),
                         address(this),
                         bytes32(uint256(_signer)),
-                        CODE_HASH
+                        hash
                     )
                 )
             )
@@ -30,7 +53,7 @@ contract MarmoFactory {
     }
 
     function reveal(address _signer) external returns (Proxy p) {
-        bytes memory proxyCode = PROXY_BYTECODE;
+        bytes memory proxyCode = bytecode;
 
         assembly {
             let nonce := mload(0x40)
@@ -39,8 +62,6 @@ contract MarmoFactory {
             p := create2(0, add(proxyCode, 0x20), mload(proxyCode), _signer)
         }
 
-        (bool success, ) = address(p).call(abi.encode(marmoSource));
-        require(success, "Setup failed");
         Marmo(address(p)).init(_signer);
     }
 }
