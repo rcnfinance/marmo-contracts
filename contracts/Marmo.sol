@@ -11,6 +11,7 @@ contract Marmo is Ownable {
         uint256 _value,
         bytes _data,
         bytes32 _salt,
+        uint256 _expiration,
         address _relayer,
         bool _success
     );
@@ -33,7 +34,8 @@ contract Marmo is Ownable {
         bytes memory _data,
         uint256 _minGasLimit,
         uint256 _maxGasPrice,
-        bytes32 _salt
+        bytes32 _salt,
+        uint256 _expiration
     ) public view returns (bytes32) {
         return keccak256(
             abi.encodePacked(
@@ -44,7 +46,8 @@ contract Marmo is Ownable {
                 keccak256(_data),
                 _minGasLimit,
                 _maxGasPrice,
-                _salt
+                _salt,
+                _expiration
             )
         );
     }
@@ -58,20 +61,22 @@ contract Marmo is Ownable {
     }
 
     function relay(
-        bytes32[] calldata _dependencies,
+        bytes32[] memory _dependencies,
         address _to,
         uint256 _value,
-        bytes calldata _data,
+        bytes memory _data,
         uint256 _minGasLimit,
         uint256 _maxGasPrice,
         bytes32 _salt,
-        bytes calldata _signature
-    ) external returns (
+        uint256 _expiration,
+        bytes memory _signature
+    ) public returns (
         bool success,
         bytes memory data 
     ) {
-        bytes32 id = encodeTransactionData(_dependencies, _to, _value, _data, _minGasLimit, _maxGasPrice, _salt);
+        bytes32 id = encodeTransactionData(_dependencies, _to, _value, _data, _minGasLimit, _maxGasPrice, _salt, _expiration);
         
+        require(now < _expiration, "Intent is expired");
         require(tx.gasprice <= _maxGasPrice);
         require(!isCanceled[id], "Transaction was canceled");
         require(relayerOf[id] == address(0), "Transaction already relayed");
@@ -90,6 +95,7 @@ contract Marmo is Ownable {
             _value,
             _data,
             _salt,
+            _expiration,
             msg.sender,
             success
         );
