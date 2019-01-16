@@ -5,14 +5,13 @@ import "./commons/Ownable.sol";
 
 contract Marmo is Ownable {
     event Relayed(
-        bytes32 _id,
+        bytes32 indexed _id,
         bytes32[] _dependencies,
         address _to,
         uint256 _value,
         bytes _data,
         bytes32 _salt,
         uint256 _expiration,
-        address _relayer,
         bool _success
     );
 
@@ -96,7 +95,6 @@ contract Marmo is Ownable {
             _data,
             _salt,
             _expiration,
-            msg.sender,
             success
         );
     }
