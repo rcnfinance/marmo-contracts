@@ -1,7 +1,6 @@
 pragma solidity ^0.5.0;
 
 import "./Marmo.sol";
-import "./commons/Proxy.sol"; 
 
 contract MarmoFactory {
     // Compiled Proxy.sol
@@ -52,16 +51,13 @@ contract MarmoFactory {
         );
     }
 
-    function reveal(address _signer) external returns (Proxy p) {
+    function reveal(address _signer) external returns (address p) {
         bytes memory proxyCode = bytecode;
 
         assembly {
-            let nonce := mload(0x40)
-            mstore(nonce, _signer)
-            mstore(0x40, add(nonce, 0x20))
             p := create2(0, add(proxyCode, 0x20), mload(proxyCode), _signer)
         }
 
-        Marmo(address(p)).init(_signer);
+        Marmo(address(uint160(address(p)))).init(_signer);
     }
 }

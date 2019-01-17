@@ -19,11 +19,23 @@ contract Marmo is Ownable {
         bytes32 _id
     );
 
-    mapping(bytes32 => address) public relayerOf;
-    mapping(bytes32 => bool) public isCanceled;
+    // [1 bit (canceled) 95 bits (block) 160 bits (relayer)]
+    mapping(bytes32 => bytes32) private intentReceipt;
 
     function init(address _owner) external {
         _init(_owner);
+    }
+
+    function relayedBy(bytes32 _id) external view returns (address _relayer) {
+        (,,_relayer) = _decodeReceipt(intentReceipt[_id]);
+    }
+
+    function relayedAt(bytes32 _id) external view returns (uint256 _block) {
+        (,_block,) = _decodeReceipt(intentReceipt[_id]);
+    }
+
+    function isCanceled(bytes32 _id) external view returns (bool _canceled) {
+        (_canceled,,) = _decodeReceipt(intentReceipt[_id]);
     }
 
     function encodeTransactionData(
@@ -53,7 +65,8 @@ contract Marmo is Ownable {
 
     function dependenciesSatisfied(bytes32[] memory _dependencies) internal view returns (bool) {
         for (uint256 i; i < _dependencies.length; i++) {
-            if (relayerOf[_dependencies[i]] == address(0)) return false;
+            (,, address relayer) = _decodeReceipt(intentReceipt[_dependencies[i]]);
+            if (relayer == address(0)) return false;
         }
         
         return true;
@@ -75,17 +88,22 @@ contract Marmo is Ownable {
     ) {
         bytes32 id = encodeTransactionData(_dependencies, _to, _value, _data, _minGasLimit, _maxGasPrice, _salt, _expiration);
         
-        require(now < _expiration, "Intent is expired");
-        require(tx.gasprice <= _maxGasPrice);
-        require(!isCanceled[id], "Transaction was canceled");
-        require(relayerOf[id] == address(0), "Transaction already relayed");
-        require(dependenciesSatisfied(_dependencies), "Parent relay not found");
-        require(msg.sender == owner || owner == SigUtils.ecrecover2(id, _signature), "Invalid signature");
+        if(intentReceipt[id] != bytes32(0)) {
+            (bool canceled, , address relayer) = _decodeReceipt(intentReceipt[id]);
+            require(relayer == address(0), "Intent already relayed");
+            require(!canceled, "Intent was canceled");
+            revert("Unknown error");
+        }
 
-        require(gasleft() > _minGasLimit);
+        require(now < _expiration, "Intent is expired");
+        require(tx.gasprice <= _maxGasPrice, "Gas price too high");
+        require(dependenciesSatisfied(_dependencies), "Parent relay not found");
+        address _owner = owner;
+        require(msg.sender == _owner || _owner == SigUtils.ecrecover2(id, _signature), "Invalid signature");
+        require(gasleft() > _minGasLimit, "gasleft() too low");
         (success, data) = _to.call.value(_value)(_data);
 
-        relayerOf[id] = msg.sender;
+        intentReceipt[id] = _encodeReceipt(false, block.number, msg.sender);
         
         emit Relayed(
             id,
@@ -99,11 +117,39 @@ contract Marmo is Ownable {
         );
     }
 
-    function cancel(bytes32 _hashTransaction) external {
+    function cancel(bytes32 _id) external {
         require(msg.sender == address(this), "Only wallet can cancel txs");
-        require(relayerOf[_hashTransaction] == address(0), "Transaction was already relayed");
-        isCanceled[_hashTransaction] = true;
+        if(intentReceipt[_id] != bytes32(0)) {
+            (bool canceled, , address relayer) = _decodeReceipt(intentReceipt[_id]);
+            require(relayer == address(0), "Intent already relayed");
+            require(!canceled, "Intent was canceled");
+            revert("Unknown error");
+        }
+
+        intentReceipt[_id] = _encodeReceipt(true, 0, address(0));
+    }
+
+    function _encodeReceipt(
+        bool _canceled,
+        uint256 _block,
+        address _relayer
+    ) internal pure returns (bytes32 _receipt) {
+        assembly {
+            _receipt := or(shl(255, _canceled), or(shl(160, _block), _relayer))
+        }
     }
     
+    function _decodeReceipt(bytes32 _receipt) internal pure returns (
+        bool _canceled,
+        uint256 _block,
+        address _relayer
+    ) {
+        assembly {
+            _canceled := shr(255, _receipt)
+            _block := and(shr(160, _receipt), 0x7fffffffffffffffffffffff)
+            _relayer := and(_receipt, 0xffffffffffffffffffffffffffffffffffffffff)
+        }
+    }
+
     function() external payable {}
 }
