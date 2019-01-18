@@ -101,9 +101,10 @@ contract Marmo is Ownable {
         address _owner = owner;
         require(msg.sender == _owner || _owner == SigUtils.ecrecover2(id, _signature), "Invalid signature");
         require(gasleft() > _minGasLimit, "gasleft() too low");
-        (success, data) = _to.call.value(_value)(_data);
 
         intentReceipt[id] = _encodeReceipt(false, block.number, msg.sender);
+
+        (success, data) = _to.call.value(_value)(_data);
         
         emit Relayed(
             id,
