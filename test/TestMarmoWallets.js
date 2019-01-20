@@ -38,9 +38,13 @@ function signHash (hash, priv) {
 }
 
 contract('Marmo wallets', function (accounts) {
+    let marmoCode;
+    let creator;
+    let testToken;
+
     before(async function () {
         // Validate test node
-        for (i = 0; i < accounts.length; i++) {
+        for (let i = 0; i < accounts.length; i++) {
             accounts[i].should.equal(
                 eutils.toChecksumAddress(eutils.bufferToHex(eutils.privateToAddress(eutils.toBuffer(privs[i])))),
                 'Invalid test node setup, incorrect accounts ganache-cli'
