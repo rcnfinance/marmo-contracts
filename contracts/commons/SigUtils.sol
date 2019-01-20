@@ -1,5 +1,6 @@
 pragma solidity ^0.5.0;
 
+
 library SigUtils {
     /**
       @dev Recovers address who signed the message 
@@ -24,6 +25,11 @@ library SigUtils {
             v += 27;
         }
 
-        return ecrecover(_hash, v, r, s);
+        return ecrecover(
+            _hash,
+            v,
+            r,
+            s
+        );
     }
 }

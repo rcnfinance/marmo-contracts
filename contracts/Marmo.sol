@@ -3,6 +3,7 @@ pragma solidity ^0.5.0;
 import "./commons/SigUtils.sol";
 import "./commons/Ownable.sol";
 
+
 contract Marmo is Ownable {
     event Relayed(
         bytes32 indexed _id,
@@ -22,6 +23,8 @@ contract Marmo is Ownable {
     // [1 bit (canceled) 95 bits (block) 160 bits (relayer)]
     mapping(bytes32 => bytes32) private intentReceipt;
 
+    function() external payable {}
+
     function init(address _owner) external {
         _init(_owner);
     }
@@ -36,6 +39,18 @@ contract Marmo is Ownable {
 
     function isCanceled(bytes32 _id) external view returns (bool _canceled) {
         (_canceled,,) = _decodeReceipt(intentReceipt[_id]);
+    }
+
+    function cancel(bytes32 _id) external {
+        require(msg.sender == address(this), "Only wallet can cancel txs");
+        if (intentReceipt[_id] != bytes32(0)) {
+            (bool canceled, , address relayer) = _decodeReceipt(intentReceipt[_id]);
+            require(relayer == address(0), "Intent already relayed");
+            require(!canceled, "Intent was canceled");
+            revert("Unknown error");
+        }
+
+        intentReceipt[_id] = _encodeReceipt(true, 0, address(0));
     }
 
     function encodeTransactionData(
@@ -63,15 +78,6 @@ contract Marmo is Ownable {
         );
     }
 
-    function dependenciesSatisfied(bytes32[] memory _dependencies) internal view returns (bool) {
-        for (uint256 i; i < _dependencies.length; i++) {
-            (,, address relayer) = _decodeReceipt(intentReceipt[_dependencies[i]]);
-            if (relayer == address(0)) return false;
-        }
-        
-        return true;
-    }
-
     function relay(
         bytes32[] memory _dependencies,
         address _to,
@@ -86,9 +92,18 @@ contract Marmo is Ownable {
         bool success,
         bytes memory data 
     ) {
-        bytes32 id = encodeTransactionData(_dependencies, _to, _value, _data, _minGasLimit, _maxGasPrice, _salt, _expiration);
+        bytes32 id = encodeTransactionData(
+            _dependencies,
+            _to,
+            _value,
+            _data,
+            _minGasLimit,
+            _maxGasPrice,
+            _salt,
+            _expiration
+        );
         
-        if(intentReceipt[id] != bytes32(0)) {
+        if (intentReceipt[id] != bytes32(0)) {
             (bool canceled, , address relayer) = _decodeReceipt(intentReceipt[id]);
             require(relayer == address(0), "Intent already relayed");
             require(!canceled, "Intent was canceled");
@@ -97,13 +112,14 @@ contract Marmo is Ownable {
 
         require(now < _expiration, "Intent is expired");
         require(tx.gasprice <= _maxGasPrice, "Gas price too high");
-        require(dependenciesSatisfied(_dependencies), "Dependencies are not satisfied");
+        require(_dependenciesSatisfied(_dependencies), "Dependencies are not satisfied");
         address _owner = owner;
         require(msg.sender == _owner || _owner == SigUtils.ecrecover2(id, _signature), "Invalid signature");
         require(gasleft() > _minGasLimit, "gasleft too low");
 
         intentReceipt[id] = _encodeReceipt(false, block.number, msg.sender);
 
+        // solium-disable-next-line security/no-call-value
         (success, data) = _to.call.value(_value)(_data);
         
         emit Relayed(
@@ -116,18 +132,6 @@ contract Marmo is Ownable {
             _expiration,
             success
         );
-    }
-
-    function cancel(bytes32 _id) external {
-        require(msg.sender == address(this), "Only wallet can cancel txs");
-        if (intentReceipt[_id] != bytes32(0)) {
-            (bool canceled, , address relayer) = _decodeReceipt(intentReceipt[_id]);
-            require(relayer == address(0), "Intent already relayed");
-            require(!canceled, "Intent was canceled");
-            revert("Unknown error");
-        }
-
-        intentReceipt[_id] = _encodeReceipt(true, 0, address(0));
     }
 
     function _encodeReceipt(
@@ -152,5 +156,12 @@ contract Marmo is Ownable {
         }
     }
 
-    function() external payable {}
+    function _dependenciesSatisfied(bytes32[] memory _dependencies) internal view returns (bool) {
+        for (uint256 i; i < _dependencies.length; i++) {
+            (,, address relayer) = _decodeReceipt(intentReceipt[_dependencies[i]]);
+            if (relayer == address(0)) return false;
+        }
+        
+        return true;
+    }
 }
