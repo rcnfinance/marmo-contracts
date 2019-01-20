@@ -97,10 +97,10 @@ contract Marmo is Ownable {
 
         require(now < _expiration, "Intent is expired");
         require(tx.gasprice <= _maxGasPrice, "Gas price too high");
-        require(dependenciesSatisfied(_dependencies), "Parent relay not found");
+        require(dependenciesSatisfied(_dependencies), "Dependencies are not satisfied");
         address _owner = owner;
         require(msg.sender == _owner || _owner == SigUtils.ecrecover2(id, _signature), "Invalid signature");
-        require(gasleft() > _minGasLimit, "gasleft() too low");
+        require(gasleft() > _minGasLimit, "gasleft too low");
 
         intentReceipt[id] = _encodeReceipt(false, block.number, msg.sender);
 
@@ -120,7 +120,7 @@ contract Marmo is Ownable {
 
     function cancel(bytes32 _id) external {
         require(msg.sender == address(this), "Only wallet can cancel txs");
-        if(intentReceipt[_id] != bytes32(0)) {
+        if (intentReceipt[_id] != bytes32(0)) {
             (bool canceled, , address relayer) = _decodeReceipt(intentReceipt[_id]);
             require(relayer == address(0), "Intent already relayed");
             require(!canceled, "Intent was canceled");

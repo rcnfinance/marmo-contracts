@@ -74,7 +74,18 @@ jobs:
             # Start ganache
             - run:
                 name: Start ganache instance
-                command: node_modules/.bin/ganache-cli --hardfork constantinople
+                command: node_modules/.bin/ganache-cli \
+                    --hardfork constantinople \
+                    --account '0x62d29230c55255d404f85cf45d2db438911a8e8c76b9e917656fdbd8c4adccf4,100000000000000000000' \
+                    --account '0x5ef1dbf8ef171b33cd72a5d11b713442dcd2c70695753a0f6df9b38136e08d54,100000000000000000000' \
+                    --account '0x6306c990056a965674edf80c7e1518d1c337abe005ffd7dcd17b25a2db0dfb2f,100000000000000000000' \
+                    --account '0xadfc814c0e30d88889a5cf3701e8da4ea65fc15111f54591e6f0ee4aa129f40f,100000000000000000000' \
+                    --account '0x2a050363f79a7da50302c2ed81a141f4307d056846339183c671d8defa10db33,100000000000000000000' \
+                    --account '0x6de344483ec377e3262437805e3e9f290b1094d7c19bab52eca42bb471edc81a,100000000000000000000' \
+                    --account '0x871cbb62ecf06d97185ca70e1722e51684db71066f43c672b6589d47c15d9cb3,100000000000000000000' \
+                    --account '0x68159b0ce11c69e75aaa79286f4c6f9e11523f4c12631e608e6a6d60d57dbd94,100000000000000000000' \
+                    --account '0x60b51acb27b07e5f8000ad8451469d1326d10357cad955ec4f5d5537ede0e9d8,100000000000000000000' \
+                    --account '0x3a423f1c02a85be8641f67e36d91ae4089766ceb18bd7308c2e845d8e90fa705,100000000000000000000'
                 background: true
             # Run truffle test
             - run:
