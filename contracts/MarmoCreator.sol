@@ -2,6 +2,8 @@ pragma solidity ^0.5.0;
 
 import "./Marmo.sol";
 
+
+// solium-disable max-len
 contract MarmoFactory {
     // Compiled Proxy.sol
     bytes public constant BYTECODE_1 = hex"6080604052348015600f57600080fd5b50606780601d6000396000f3fe6080604052366000803760008036600073";
@@ -16,24 +18,6 @@ contract MarmoFactory {
         bytecode = _concat(_concat(BYTECODE_1, abi.encodePacked(_marmo)), BYTECODE_2);
         hash = keccak256(bytecode);
         marmoSource = _marmo;
-    }
-    
-    function _concat(bytes memory _baseBytes, bytes memory _valueBytes) internal pure returns (bytes memory _out) {
-        uint256 blength = _baseBytes.length;
-        uint256 vlength = _valueBytes.length;
-
-        _out = new bytes(blength + vlength);
-
-        uint256 i;
-        uint256 j;
-
-        for(i = 0; i < blength; i++) {
-            _out[j++] = _baseBytes[i];
-        }
-
-        for(i = 0; i < vlength; i++) {
-            _out[j++] = _valueBytes[i];
-        }
     }
     
     function marmoOf(address _signer) external view returns (address) {
@@ -59,5 +43,23 @@ contract MarmoFactory {
         }
 
         Marmo(address(uint160(address(p)))).init(_signer);
+    }
+
+    function _concat(bytes memory _baseBytes, bytes memory _valueBytes) internal pure returns (bytes memory _out) {
+        uint256 blength = _baseBytes.length;
+        uint256 vlength = _valueBytes.length;
+
+        _out = new bytes(blength + vlength);
+
+        uint256 i;
+        uint256 j;
+
+        for ( i = 0; i < blength; i++) {
+            _out[j++] = _baseBytes[i];
+        }
+
+        for (i = 0; i < vlength; i++) {
+            _out[j++] = _valueBytes[i];
+        }
     }
 }
