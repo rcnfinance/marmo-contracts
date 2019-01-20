@@ -74,7 +74,8 @@ jobs:
             # Start ganache
             - run:
                 name: Start ganache instance
-                command: node_modules/.bin/ganache-cli \
+                command: |
+                    node_modules/.bin/ganache-cli \
                     --hardfork constantinople \
                     --account '0x62d29230c55255d404f85cf45d2db438911a8e8c76b9e917656fdbd8c4adccf4,100000000000000000000' \
                     --account '0x5ef1dbf8ef171b33cd72a5d11b713442dcd2c70695753a0f6df9b38136e08d54,100000000000000000000' \
