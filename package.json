@@ -24,6 +24,8 @@
   },
   "devDependencies": {
     "bignumber.js": "github:frozeman/bignumber.js-nolookahead",
+    "chai": "^4.2.0",
+    "chai-as-promised": "^7.1.1",
     "chai-bn": "^0.1.1",
     "eslint": "^4.19.1",
     "eslint-config-standard": "^10.2.1",
@@ -34,7 +36,9 @@
     "ethereumjs-abi": "^0.6.5",
     "ethlint": "^1.2.0",
     "ganache-cli": "6.3.0-beta.0",
+    "ganache-cli-coverage": "agusx1211/ganache-cli#coverage",
     "openzeppelin-solidity": "^2.1.2",
+    "solidity-coverage": "rotcivegaf/solidity-coverage",
     "solium": "^1.1.8",
     "truffle": "^5.0.2",
     "web3": "1.0.0-beta.36",
