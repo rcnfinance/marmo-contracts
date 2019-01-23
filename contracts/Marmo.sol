@@ -112,7 +112,7 @@ contract Marmo is Ownable {
 
         require(now < _expiration, "Intent is expired");
         require(tx.gasprice <= _maxGasPrice, "Gas price too high");
-        require(_checkDependency(_dependency), "Dependencies are not satisfied");
+        require(_checkDependency(_dependency), "Dependency is not satisfied");
 
         address _owner = owner;
         require(msg.sender == _owner || _owner == SigUtils.ecrecover2(id, _signature), "Invalid signature");
@@ -159,17 +159,17 @@ contract Marmo is Ownable {
     }
 
     // [160 bits (target) + n bits (data)]
-    function _checkDependency(bytes memory _dependencies) internal view returns (bool result) {
-        if (_dependencies.length == 0) {
+    function _checkDependency(bytes memory _dependency) internal view returns (bool result) {
+        if (_dependency.length == 0) {
             result = true;
         } else {
             assembly {
                 let response := mload(0x40)
                 let success := staticcall(
                     gas,
-                    mload(add(_dependencies, 20)),
-                    add(52, _dependencies),
-                    sub(mload(_dependencies), 20),
+                    mload(add(_dependency, 20)),
+                    add(52, _dependency),
+                    sub(mload(_dependency), 20),
                     response,
                     32
                 )

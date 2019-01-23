@@ -389,7 +389,7 @@ contract('Marmo wallets', function (accounts) {
                 salt,
                 expiration,
                 signature
-            ), 'Dependencies are not satisfied');
+            ), 'Dependency is not satisfied');
         });
         it('Should fail to relay is intent is already relayed', async function () {
             const wallet = await Marmo.at(await creator.marmoOf(accounts[1]));
@@ -1006,7 +1006,7 @@ contract('Marmo wallets', function (accounts) {
                 salt,
                 expiration,
                 signature
-            ), "Dependencies are not satisfied");
+            ), "Dependency is not satisfied");
 
             (await wallet.relayedBy(id)).should.not.be.equals(accounts[0]);
         });
