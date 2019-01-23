@@ -164,11 +164,10 @@ contract Marmo is Ownable {
             result = true;
         } else {
             assembly {
-                let target := and(mload(add(_dependencies, 20)), 0xffffffffffffffffffffffffffffffffffffffff)
                 let response := mload(0x40)
                 let success := staticcall(
                     gas,
-                    target,
+                    mload(add(_dependencies, 20)),
                     add(52, _dependencies),
                     sub(mload(_dependencies), 20),
                     response,
