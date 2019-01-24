@@ -7,7 +7,7 @@ import "./commons/Ownable.sol";
 contract Marmo is Ownable {
     event Relayed(
         bytes32 indexed _id,
-        bytes32[] _dependencies,
+        bytes _dependencies,
         address _to,
         uint256 _value,
         bytes _data,
@@ -55,7 +55,7 @@ contract Marmo is Ownable {
     }
 
     function encodeTransactionData(
-        bytes32[] memory _dependencies,
+        bytes memory _dependency,
         address _to,
         uint256 _value,
         bytes memory _data,
@@ -67,7 +67,7 @@ contract Marmo is Ownable {
         return keccak256(
             abi.encodePacked(
                 this,
-                keccak256(abi.encodePacked(_dependencies)),
+                keccak256(_dependency),
                 _to,
                 _value,
                 keccak256(_data),
@@ -80,7 +80,7 @@ contract Marmo is Ownable {
     }
 
     function relay(
-        bytes32[] memory _dependencies,
+        bytes memory _dependency,
         address _to,
         uint256 _value,
         bytes memory _data,
@@ -94,7 +94,7 @@ contract Marmo is Ownable {
         bytes memory result 
     ) {
         bytes32 id = encodeTransactionData(
-            _dependencies,
+            _dependency,
             _to,
             _value,
             _data,
@@ -113,9 +113,11 @@ contract Marmo is Ownable {
 
         require(now < _expiration, "Intent is expired");
         require(tx.gasprice <= _maxGasPrice, "Gas price too high");
-        require(_dependenciesSatisfied(_dependencies), "Dependencies are not satisfied");
+        require(_checkDependency(_dependency), "Dependency is not satisfied");
+
         address _owner = owner;
         require(msg.sender == _owner || _owner == SigUtils.ecrecover2(id, _signature), "Invalid signature");
+
         require(gasleft() > _minGasLimit, "gasleft too low");
 
         intentReceipt[id] = _encodeReceipt(false, block.number, msg.sender);
@@ -125,7 +127,7 @@ contract Marmo is Ownable {
         
         emit Relayed(
             id,
-            _dependencies,
+            _dependency,
             _to,
             _value,
             _data,
@@ -158,12 +160,24 @@ contract Marmo is Ownable {
         }
     }
 
-    function _dependenciesSatisfied(bytes32[] memory _dependencies) internal view returns (bool) {
-        for (uint256 i; i < _dependencies.length; i++) {
-            (,, address relayer) = _decodeReceipt(intentReceipt[_dependencies[i]]);
-            if (relayer == address(0)) return false;
+    // [160 bits (target) + n bits (data)]
+    function _checkDependency(bytes memory _dependency) internal view returns (bool result) {
+        if (_dependency.length == 0) {
+            result = true;
+        } else {
+            assembly {
+                let response := mload(0x40)
+                let success := staticcall(
+                    gas,
+                    mload(add(_dependency, 20)),
+                    add(52, _dependency),
+                    sub(mload(_dependency), 20),
+                    response,
+                    32
+                )
+
+                result := and(gt(success, 0), gt(mload(response), 0))
+            }
         }
-        
-        return true;
     }
 }
