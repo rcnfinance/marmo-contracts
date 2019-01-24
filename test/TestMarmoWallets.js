@@ -716,7 +716,7 @@ contract('Marmo wallets', function (accounts) {
             const testContract = await TestOutOfGasContract.new();
             const wallet = await Marmo.at(await creator.marmoOf(accounts[1]));
 
-            const dependencies = "0x";
+            const dependencies = [];
             const to = testContract.address;
             const value = 0;
             const data = "0x";
