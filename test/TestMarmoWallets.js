@@ -40,7 +40,6 @@ function signHash (hash, priv) {
 }
 
 contract('Marmo wallets', function (accounts) {
-    let marmoCode;
     let creator;
     let testToken;
     let depsUtils;
@@ -55,14 +54,13 @@ contract('Marmo wallets', function (accounts) {
         }
 
         // Setup contracts
-        marmoCode = await Marmo.new();
-        creator = await MarmoCreator.new(marmoCode.address);
+        creator = await MarmoCreator.new();
         depsUtils = await DepsUtils.new();
         testToken = await TestERC20.new();
     });
     describe('Create marmo wallets', function () {
         it('Should reveal the marmo wallet', async function () {
-            const creator = await MarmoCreator.new(marmoCode.address);
+            const creator = await MarmoCreator.new();
             await creator.reveal(accounts[0]);
         });
         it('Should predict the Marmo wallet', async function () {

@@ -14,10 +14,11 @@ contract MarmoFactory {
     
     address public marmoSource;
 
-    constructor(address _marmo) public {
-        bytecode = _concat(_concat(BYTECODE_1, abi.encodePacked(_marmo)), BYTECODE_2);
+    constructor() public {
+        Marmo marmo = new Marmo();
+        bytecode = _concat(_concat(BYTECODE_1, abi.encodePacked(marmo)), BYTECODE_2);
         hash = keccak256(bytecode);
-        marmoSource = _marmo;
+        marmoSource = address(marmo);
     }
     
     function marmoOf(address _signer) external view returns (address) {
@@ -54,7 +55,7 @@ contract MarmoFactory {
         uint256 i;
         uint256 j;
 
-        for ( i = 0; i < blength; i++) {
+        for (i = 0; i < blength; i++) {
             _out[j++] = _baseBytes[i];
         }
 
