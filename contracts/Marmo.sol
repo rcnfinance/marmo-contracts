@@ -5,6 +5,8 @@ import "./commons/Ownable.sol";
 
 
 contract Marmo is Ownable {
+    uint256 private constant EXTRA_GAS = 21000;
+
     event Relayed(
         bytes32 indexed _id,
         bytes _dependencies,
@@ -118,13 +120,13 @@ contract Marmo is Ownable {
         address _owner = owner;
         require(msg.sender == _owner || _owner == SigUtils.ecrecover2(id, _signature), "Invalid signature");
 
-        require(gasleft() > _minGasLimit, "gasleft too low");
-
         intentReceipt[id] = _encodeReceipt(false, block.number, msg.sender);
 
+        require(gasleft() > _minGasLimit + EXTRA_GAS, "gasleft too low");
+
         // solium-disable-next-line security/no-call-value
-        (success, result) = _to.call.value(_value)(_data);
-        
+        (success, result) = _to.call.gas(gasleft() - EXTRA_GAS).value(_value)(_data);
+
         emit Relayed(
             id,
             _dependency,

@@ -2,6 +2,7 @@ const Marmo = artifacts.require('./Marmo.sol');
 const MarmoCreator = artifacts.require('./MarmoFactory.sol');
 const DepsUtils = artifacts.require('./DepsUtils.sol');
 const TestERC20 = artifacts.require('./TestERC20.sol');
+const TestOutOfGasContract = artifacts.require('./TestOutOfGasContract.sol');
 
 const eutils = require('ethereumjs-util');
 const Helper = require('./Helper.js');
@@ -758,6 +759,45 @@ contract('Marmo wallets', function (accounts) {
             (await wallet.relayedBy(id)).should.be.equals(accounts[0]);
             bn(await testToken.balanceOf(accounts[9])).should.be.a.bignumber.that.equals(bn(0));
             bn(await testToken.balanceOf(wallet.address)).should.be.a.bignumber.that.equals(bn(10));
+        });
+        it('Should catch if call is out of gas', async function () {
+            const testContract = await TestOutOfGasContract.new();
+            const wallet = await Marmo.at(await creator.marmoOf(accounts[1]));
+
+            const dependencies = '0x';
+            const to = testContract.address;
+            const value = 0;
+            const data = '0x';
+            const minGasLimit = bn(0);
+            const maxGasPrice = bn(10).pow(bn(32));
+            const salt = '0x12';
+            const expiration = await Helper.getBlockTime() + 240;
+
+            const id = await wallet.encodeTransactionData(
+                dependencies,
+                to,
+                value,
+                data,
+                minGasLimit,
+                maxGasPrice,
+                salt,
+                expiration
+            );
+
+            const signature = signHash(id, privs[1]);
+            await wallet.relay(
+                dependencies,
+                to,
+                value,
+                data,
+                minGasLimit,
+                maxGasPrice,
+                salt,
+                expiration,
+                signature
+            );
+
+            (await wallet.relayedBy(id)).should.be.equals(accounts[0]);
         });
         it('Should relay with multiple dependencies', async function () {
             try {
