@@ -1,7 +1,7 @@
 const Marmo = artifacts.require('./Marmo.sol');
 const MarmoCreator = artifacts.require('./MarmoFactory.sol');
 const TestERC20 = artifacts.require('./TestERC20.sol');
-const TestOutOfGasContract = artifacts.require('./TestOutOfGasContract.sol')
+const TestOutOfGasContract = artifacts.require('./TestOutOfGasContract.sol');
 
 const eutils = require('ethereumjs-util');
 const Helper = require('./Helper.js');
@@ -712,14 +712,14 @@ contract('Marmo wallets', function (accounts) {
             bn(await testToken.balanceOf(accounts[9])).should.be.a.bignumber.that.equals(bn(0));
             bn(await testToken.balanceOf(wallet.address)).should.be.a.bignumber.that.equals(bn(10));
         });
-        it("Should catch if call is out of gas", async function() {
+        it('Should catch if call is out of gas', async function () {
             const testContract = await TestOutOfGasContract.new();
             const wallet = await Marmo.at(await creator.marmoOf(accounts[1]));
 
             const dependencies = [];
             const to = testContract.address;
             const value = 0;
-            const data = "0x";
+            const data = '0x';
             const minGasLimit = bn(0);
             const maxGasPrice = bn(10).pow(bn(32));
             const salt = '0x12';
