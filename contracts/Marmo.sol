@@ -13,7 +13,8 @@ contract Marmo is Ownable {
         bytes _data,
         bytes32 _salt,
         uint256 _expiration,
-        bool _success
+        bool _success,
+        bytes _result
     );
 
     event Canceled(
@@ -90,7 +91,7 @@ contract Marmo is Ownable {
         bytes memory _signature
     ) public returns (
         bool success,
-        bytes memory data 
+        bytes memory result 
     ) {
         bytes32 id = encodeTransactionData(
             _dependency,
@@ -122,7 +123,7 @@ contract Marmo is Ownable {
         intentReceipt[id] = _encodeReceipt(false, block.number, msg.sender);
 
         // solium-disable-next-line security/no-call-value
-        (success, data) = _to.call.value(_value)(_data);
+        (success, result) = _to.call.value(_value)(_data);
         
         emit Relayed(
             id,
@@ -132,7 +133,8 @@ contract Marmo is Ownable {
             _data,
             _salt,
             _expiration,
-            success
+            success,
+            result
         );
     }
 
