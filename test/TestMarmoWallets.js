@@ -1,5 +1,6 @@
 const Marmo = artifacts.require('./Marmo.sol');
 const MarmoCreator = artifacts.require('./MarmoFactory.sol');
+const DepsUtils = artifacts.require('./DepsUtils.sol');
 const TestERC20 = artifacts.require('./TestERC20.sol');
 const TestOutOfGasContract = artifacts.require('./TestOutOfGasContract.sol');
 
@@ -42,6 +43,7 @@ contract('Marmo wallets', function (accounts) {
     let marmoCode;
     let creator;
     let testToken;
+    let depsUtils;
 
     before(async function () {
         // Validate test node
@@ -55,6 +57,7 @@ contract('Marmo wallets', function (accounts) {
         // Setup contracts
         marmoCode = await Marmo.new();
         creator = await MarmoCreator.new(marmoCode.address);
+        depsUtils = await DepsUtils.new();
         testToken = await TestERC20.new();
     });
     describe('Create marmo wallets', function () {
@@ -77,7 +80,7 @@ contract('Marmo wallets', function (accounts) {
             const wallet = await Marmo.at(await creator.marmoOf(accounts[1]));
             await web3.eth.sendTransaction({ from: accounts[0], to: wallet.address, value: 1 });
 
-            const dependencies = [];
+            const dependencies = '0x';
             const to = accounts[9];
             const value = 1;
             const data = '0x';
@@ -122,7 +125,7 @@ contract('Marmo wallets', function (accounts) {
             await testToken.setBalance(wallet.address, 10);
             await testToken.setBalance(accounts[9], 0);
 
-            const dependencies = [];
+            const dependencies = '0x';
             const to = testToken.address;
             const value = 0;
             const data = web3.eth.abi.encodeFunctionCall({
@@ -173,7 +176,7 @@ contract('Marmo wallets', function (accounts) {
             const wallet = await Marmo.at(await creator.marmoOf(accounts[1]));
             await web3.eth.sendTransaction({ from: accounts[0], to: wallet.address, value: 1 });
 
-            const dependencies = [];
+            const dependencies = '0x';
             const to = accounts[9];
             const value = 1;
             const data = '0x';
@@ -227,13 +230,13 @@ contract('Marmo wallets', function (accounts) {
         });
         it('Should relay is dependencies are filled', async function () {
             const wallet = await Marmo.at(await creator.marmoOf(accounts[1]));
-            const ddependencies = [];
+            const ddependencies = '0x';
             const dto = accounts[9];
-            const dvalue = 1;
+            const dvalue = 0;
             const ddata = '0x';
             const dminGasLimit = 0;
             const dmaxGasPrice = bn(10).pow(bn(32));
-            const dsalt = '0x';
+            const dsalt = '0x1';
             const dexpiration = bn(10).pow(bn(24));
 
             const idDependency = await wallet.encodeTransactionData(
@@ -249,7 +252,37 @@ contract('Marmo wallets', function (accounts) {
 
             await web3.eth.sendTransaction({ from: accounts[0], to: wallet.address, value: 1 });
 
-            const dependencies = [idDependency];
+            const dsignature = signHash(idDependency, privs[1]);
+            await wallet.relay(
+                ddependencies,
+                dto,
+                dvalue,
+                ddata,
+                dminGasLimit,
+                dmaxGasPrice,
+                dsalt,
+                dexpiration,
+                dsignature
+            );
+
+            (await wallet.relayedBy(idDependency)).should.be.equal(accounts[0]);
+
+            const dependencies = eutils.bufferToHex(
+                Buffer.concat([
+                    eutils.toBuffer(wallet.address),
+                    eutils.toBuffer(
+                        web3.eth.abi.encodeFunctionCall({
+                            name: 'relayedBy',
+                            type: 'function',
+                            inputs: [{
+                                type: 'bytes32',
+                                name: 'id',
+                            }],
+                        }, [idDependency])
+                    ),
+                ])
+            );
+
             const to = accounts[8];
             const value = 2;
             const data = '0x';
@@ -291,13 +324,13 @@ contract('Marmo wallets', function (accounts) {
         });
         it('Should fail to relay if dependencies are not filled', async function () {
             const wallet = await Marmo.at(await creator.marmoOf(accounts[1]));
-            const ddependencies = [];
+            const ddependencies = '0x';
             const dto = accounts[9];
             const dvalue = 1;
             const ddata = '0x';
             const dminGasLimit = 0;
             const dmaxGasPrice = bn(10).pow(bn(32));
-            const dsalt = '0xaaaaaa1';
+            const dsalt = '0xaaaaaa12';
             const dexpiration = bn(10).pow(bn(24));
 
             const idDependency = await wallet.encodeTransactionData(
@@ -311,7 +344,22 @@ contract('Marmo wallets', function (accounts) {
                 dexpiration
             );
 
-            const dependencies = [idDependency];
+            const dependencies = eutils.bufferToHex(
+                Buffer.concat([
+                    eutils.toBuffer(wallet.address),
+                    eutils.toBuffer(
+                        web3.eth.abi.encodeFunctionCall({
+                            name: 'relayedBy',
+                            type: 'function',
+                            inputs: [{
+                                type: 'bytes32',
+                                name: 'id',
+                            }],
+                        }, [idDependency])
+                    ),
+                ])
+            );
+
             const to = accounts[9];
             const value = 1;
             const data = '0x';
@@ -342,11 +390,11 @@ contract('Marmo wallets', function (accounts) {
                 salt,
                 expiration,
                 signature
-            ), 'Dependencies are not satisfied');
+            ), 'Dependency is not satisfied');
         });
         it('Should fail to relay is intent is already relayed', async function () {
             const wallet = await Marmo.at(await creator.marmoOf(accounts[1]));
-            const dependencies = [];
+            const dependencies = '0x';
             const to = accounts[9];
             const value = 0;
             const data = '0x';
@@ -396,7 +444,7 @@ contract('Marmo wallets', function (accounts) {
             const wallet = await Marmo.at(await creator.marmoOf(accounts[1]));
             await web3.eth.sendTransaction({ from: accounts[0], to: wallet.address, value: 1 });
 
-            const dependencies = [];
+            const dependencies = '0x';
             const to = accounts[9];
             const value = 1;
             const data = '0x';
@@ -432,7 +480,7 @@ contract('Marmo wallets', function (accounts) {
             await testToken.setBalance(wallet.address, 10);
             await testToken.setBalance(accounts[9], 0);
 
-            const dependencies = [];
+            const dependencies = '0x';
             const to = testToken.address;
             const value = 0;
             const data = web3.eth.abi.encodeFunctionCall({
@@ -484,7 +532,7 @@ contract('Marmo wallets', function (accounts) {
             await testToken.setBalance(wallet.address, 10);
             await testToken.setBalance(accounts[9], 0);
 
-            const dependencies = [];
+            const dependencies = '0x';
             const to = testToken.address;
             const value = 0;
             const data = web3.eth.abi.encodeFunctionCall({
@@ -536,7 +584,7 @@ contract('Marmo wallets', function (accounts) {
             await testToken.setBalance(wallet.address, 10);
             await testToken.setBalance(accounts[9], 0);
 
-            const dependencies = [];
+            const dependencies = '0x';
             const to = testToken.address;
             const value = 0;
             const data = web3.eth.abi.encodeFunctionCall({
@@ -586,7 +634,7 @@ contract('Marmo wallets', function (accounts) {
         it('Should save relayed block number', async function () {
             const wallet = await Marmo.at(await creator.marmoOf(accounts[1]));
 
-            const dependencies = [];
+            const dependencies = '0x';
             const to = wallet.address;
             const value = 0;
             const data = '0x';
@@ -624,7 +672,7 @@ contract('Marmo wallets', function (accounts) {
         it('Should save relayed by', async function () {
             const wallet = await Marmo.at(await creator.marmoOf(accounts[1]));
 
-            const dependencies = [];
+            const dependencies = '0x';
             const to = wallet.address;
             const value = 0;
             const data = '0x';
@@ -664,7 +712,7 @@ contract('Marmo wallets', function (accounts) {
             await testToken.setBalance(wallet.address, 10);
             await testToken.setBalance(accounts[9], 0);
 
-            const dependencies = [];
+            const dependencies = '0x';
             const to = testToken.address;
             const value = 0;
             const data = web3.eth.abi.encodeFunctionCall({
@@ -716,7 +764,7 @@ contract('Marmo wallets', function (accounts) {
             const testContract = await TestOutOfGasContract.new();
             const wallet = await Marmo.at(await creator.marmoOf(accounts[1]));
 
-            const dependencies = [];
+            const dependencies = '0x';
             const to = testContract.address;
             const value = 0;
             const data = '0x';
@@ -751,6 +799,257 @@ contract('Marmo wallets', function (accounts) {
 
             (await wallet.relayedBy(id)).should.be.equals(accounts[0]);
         });
+        it('Should relay with multiple dependencies', async function () {
+            try {
+                await creator.reveal(accounts[2]);
+            } catch (ignored) { }
+
+            const wallet = await Marmo.at(await creator.marmoOf(accounts[1]));
+            const wallet2 = await Marmo.at(await creator.marmoOf(accounts[2]));
+
+            const d1dependencies = '0x';
+            const d1to = accounts[9];
+            const d1value = 0;
+            const d1data = '0x';
+            const d1minGasLimit = 0;
+            const d1maxGasPrice = bn(10).pow(bn(32));
+            const d1salt = '0x3';
+            const d1expiration = bn(10).pow(bn(24));
+
+            const id1Dependency = await wallet.encodeTransactionData(
+                d1dependencies,
+                d1to,
+                d1value,
+                d1data,
+                d1minGasLimit,
+                d1maxGasPrice,
+                d1salt,
+                d1expiration
+            );
+
+            const d2dependencies = '0x';
+            const d2to = accounts[9];
+            const d2value = 0;
+            const d2data = '0x';
+            const d2minGasLimit = 0;
+            const d2maxGasPrice = bn(10).pow(bn(32));
+            const d2salt = '0x3';
+            const d2expiration = bn(10).pow(bn(24));
+
+            const id2Dependency = await wallet2.encodeTransactionData(
+                d2dependencies,
+                d2to,
+                d2value,
+                d2data,
+                d2minGasLimit,
+                d2maxGasPrice,
+                d2salt,
+                d2expiration
+            );
+
+            const d1signature = signHash(id1Dependency, privs[1]);
+            const d2signature = signHash(id2Dependency, privs[2]);
+
+            await wallet.relay(
+                d1dependencies,
+                d1to,
+                d1value,
+                d1data,
+                d1minGasLimit,
+                d1maxGasPrice,
+                d1salt,
+                d1expiration,
+                d1signature
+            );
+
+            await wallet2.relay(
+                d2dependencies,
+                d2to,
+                d2value,
+                d2data,
+                d2minGasLimit,
+                d2maxGasPrice,
+                d2salt,
+                d2expiration,
+                d2signature
+            );
+
+            const dependencies = eutils.bufferToHex(
+                Buffer.concat([
+                    eutils.toBuffer(depsUtils.address),
+                    eutils.toBuffer(
+                        web3.eth.abi.encodeFunctionCall({
+                            name: 'multipleDeps',
+                            type: 'function',
+                            inputs: [{
+                                type: 'address[]',
+                                name: '_wallets',
+                            },
+                            {
+                                type: 'bytes32[]',
+                                name: '_ids',
+                            }],
+                        }, [
+                            [wallet.address, wallet2.address],
+                            [id1Dependency, id2Dependency],
+                        ])
+                    ),
+                ])
+            );
+
+            const to = accounts[8];
+            const value = 2;
+            const data = '0x';
+            const minGasLimit = 0;
+            const maxGasPrice = bn(10).pow(bn(32));
+            const salt = '0x2';
+            const expiration = await Helper.getBlockTime() + 60;
+
+            const id = await wallet.encodeTransactionData(
+                dependencies,
+                to,
+                value,
+                data,
+                minGasLimit,
+                maxGasPrice,
+                salt,
+                expiration
+            );
+
+            const signature = signHash(id, privs[1]);
+            await wallet.relay(
+                dependencies,
+                to,
+                value,
+                data,
+                minGasLimit,
+                maxGasPrice,
+                salt,
+                expiration,
+                signature
+            );
+
+            (await wallet.relayedBy(id)).should.be.equals(accounts[0]);
+        });
+        it('Should fail relay with multiple dependencies, if one is not filled', async function () {
+            try {
+                await creator.reveal(accounts[2]);
+            } catch (ignored) { }
+
+            const wallet = await Marmo.at(await creator.marmoOf(accounts[1]));
+            const wallet2 = await Marmo.at(await creator.marmoOf(accounts[2]));
+
+            const d1dependencies = '0x';
+            const d1to = accounts[9];
+            const d1value = 0;
+            const d1data = '0x';
+            const d1minGasLimit = 0;
+            const d1maxGasPrice = bn(10).pow(bn(32));
+            const d1salt = '0x6';
+            const d1expiration = bn(10).pow(bn(24));
+
+            const id1Dependency = await wallet.encodeTransactionData(
+                d1dependencies,
+                d1to,
+                d1value,
+                d1data,
+                d1minGasLimit,
+                d1maxGasPrice,
+                d1salt,
+                d1expiration
+            );
+
+            const d2dependencies = '0x';
+            const d2to = accounts[9];
+            const d2value = 0;
+            const d2data = '0x';
+            const d2minGasLimit = 0;
+            const d2maxGasPrice = bn(10).pow(bn(32));
+            const d2salt = '0x5';
+            const d2expiration = bn(10).pow(bn(24));
+
+            const id2Dependency = await wallet2.encodeTransactionData(
+                d2dependencies,
+                d2to,
+                d2value,
+                d2data,
+                d2minGasLimit,
+                d2maxGasPrice,
+                d2salt,
+                d2expiration
+            );
+
+            const d1signature = signHash(id1Dependency, privs[1]);
+
+            await wallet.relay(
+                d1dependencies,
+                d1to,
+                d1value,
+                d1data,
+                d1minGasLimit,
+                d1maxGasPrice,
+                d1salt,
+                d1expiration,
+                d1signature
+            );
+
+            const dependencies = eutils.bufferToHex(
+                Buffer.concat([
+                    eutils.toBuffer(depsUtils.address),
+                    eutils.toBuffer(
+                        web3.eth.abi.encodeFunctionCall({
+                            name: 'multipleDeps',
+                            type: 'function',
+                            inputs: [{
+                                type: 'address[]',
+                                name: '_wallets',
+                            },
+                            {
+                                type: 'bytes32[]',
+                                name: '_ids',
+                            }],
+                        }, [
+                            [wallet.address, wallet2.address],
+                            [id1Dependency, id2Dependency],
+                        ])
+                    ),
+                ])
+            );
+
+            const to = accounts[8];
+            const value = 0;
+            const data = '0x';
+            const minGasLimit = 0;
+            const maxGasPrice = bn(10).pow(bn(32));
+            const salt = '0x24';
+            const expiration = await Helper.getBlockTime() + 60;
+
+            const id = await wallet.encodeTransactionData(
+                dependencies,
+                to,
+                value,
+                data,
+                minGasLimit,
+                maxGasPrice,
+                salt,
+                expiration
+            );
+
+            const signature = signHash(id, privs[1]);
+            await Helper.tryCatchRevert(wallet.relay(
+                dependencies,
+                to,
+                value,
+                data,
+                minGasLimit,
+                maxGasPrice,
+                salt,
+                expiration,
+                signature
+            ), 'Dependency is not satisfied');
+
+            (await wallet.relayedBy(id)).should.not.be.equals(accounts[0]);
+        });
     });
     describe('Cancel intents', function () {
         it('Should cancel intent and fail to relay', async function () {
@@ -760,7 +1059,7 @@ contract('Marmo wallets', function (accounts) {
             await testToken.setBalance(wallet.address, 10);
             await testToken.setBalance(accounts[9], 0);
 
-            const dependencies = [];
+            const dependencies = '0x';
             const to = testToken.address;
             const value = 0;
             const data = web3.eth.abi.encodeFunctionCall({
@@ -794,7 +1093,7 @@ contract('Marmo wallets', function (accounts) {
             const signature = signHash(id, privs[1]);
 
             // Create cancel intent
-            const cdependencies = [];
+            const cdependencies = '0x';
             const cto = wallet.address;
             const cvalue = 0;
             const cdata = web3.eth.abi.encodeFunctionCall({
@@ -861,7 +1160,7 @@ contract('Marmo wallets', function (accounts) {
             await testToken.setBalance(wallet.address, 10);
             await testToken.setBalance(accounts[9], 0);
 
-            const dependencies = [];
+            const dependencies = '0x';
             const to = testToken.address;
             const value = 0;
             const data = web3.eth.abi.encodeFunctionCall({
@@ -921,7 +1220,7 @@ contract('Marmo wallets', function (accounts) {
             await testToken.setBalance(wallet.address, 10);
             await testToken.setBalance(accounts[9], 0);
 
-            const dependencies = [];
+            const dependencies = '0x';
             const to = wallet.address;
             const value = 0;
             const data = '0x';
@@ -957,7 +1256,7 @@ contract('Marmo wallets', function (accounts) {
             );
 
             // Create cancel intent
-            const cdependencies = [];
+            const cdependencies = '0x';
             const cto = wallet.address;
             const cvalue = 0;
             const cdata = web3.eth.abi.encodeFunctionCall({
@@ -1010,7 +1309,7 @@ contract('Marmo wallets', function (accounts) {
             await testToken.setBalance(wallet.address, 10);
             await testToken.setBalance(accounts[9], 0);
 
-            const dependencies = [];
+            const dependencies = '0x';
             const to = wallet.address;
             const value = 0;
             const data = '0x';
@@ -1031,7 +1330,7 @@ contract('Marmo wallets', function (accounts) {
             );
 
             // Create cancel intent
-            const cdependencies = [];
+            const cdependencies = '0x';
             const cto = wallet.address;
             const cvalue = 0;
             const cdata = web3.eth.abi.encodeFunctionCall({
@@ -1059,7 +1358,7 @@ contract('Marmo wallets', function (accounts) {
                 cexpiration
             );
 
-            const c2dependencies = [];
+            const c2dependencies = '0x';
             const c2to = wallet.address;
             const c2value = 0;
             const c2data = web3.eth.abi.encodeFunctionCall({
