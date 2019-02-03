@@ -1,5 +1,6 @@
 const Marmo = artifacts.require('./Marmo.sol');
 const MarmoCreator = artifacts.require('./MarmoFactory.sol');
+const MarmoImp = artifacts.require('./MarmoImp.sol');
 const DepsUtils = artifacts.require('./DepsUtils.sol');
 const TestERC20 = artifacts.require('./TestERC20.sol');
 const TestOutOfGasContract = artifacts.require('./TestOutOfGasContract.sol');
@@ -39,8 +40,41 @@ function signHash (hash, priv) {
     return eutils.bufferToHex(Buffer.concat([sig.r, sig.s, eutils.toBuffer(sig.v)]));
 }
 
+function encodeImpData(
+    dependencies,
+    to,
+    value,
+    data,
+    minGasLimit,
+    maxGasPrice,
+    salt,
+    expiration
+) {
+    return web3.eth.abi.encodeParameters(
+        ["bytes", "address", "uint256", "bytes", "uint256", "uint256", "uint256", "bytes32"],
+        [dependencies, to, value, data, minGasLimit.toString(), maxGasPrice.toString(), expiration.toString(), salt]
+    );
+}
+
+function calcId(
+    wallet,
+    implementation,
+    data
+) {
+    return web3.utils.soliditySha3(
+        { t: 'address', v: wallet },
+        { t: 'address', v: implementation },
+        { t: 'bytes32', v: 
+            web3.utils.soliditySha3(
+                { t: 'bytes', v: data }
+            )
+        }
+    )
+}
+
 contract('Marmo wallets', function (accounts) {
     let creator;
+    let marmoImp;
     let testToken;
     let depsUtils;
 
@@ -55,6 +89,7 @@ contract('Marmo wallets', function (accounts) {
 
         // Setup contracts
         creator = await MarmoCreator.new();
+        marmoImp = await MarmoImp.new();
         depsUtils = await DepsUtils.new();
         testToken = await TestERC20.new();
     });
@@ -84,10 +119,10 @@ contract('Marmo wallets', function (accounts) {
             const data = '0x';
             const minGasLimit = 0;
             const maxGasPrice = bn(10).pow(bn(32));
-            const salt = '0x';
+            const salt = '0x11115';
             const expiration = bn(10).pow(bn(24));
 
-            const id = await wallet.encodeTransactionData(
+            const callData = encodeImpData(
                 dependencies,
                 to,
                 value,
@@ -98,19 +133,56 @@ contract('Marmo wallets', function (accounts) {
                 expiration
             );
 
+            const id = calcId(
+                wallet.address,
+                marmoImp.address,
+                callData
+            );
+
             const prevBalanceReceiver = bn(await web3.eth.getBalance(accounts[9]));
             bn(await web3.eth.getBalance(wallet.address)).should.be.a.bignumber.that.equals(bn(1));
 
             const signature = signHash(id, privs[1]);
             await wallet.relay(
-                dependencies,
-                to,
-                value,
-                data,
-                minGasLimit,
-                maxGasPrice,
-                salt,
-                expiration,
+                marmoImp.address,
+                callData,
+                signature
+            );
+
+            bn(await web3.eth.getBalance(wallet.address)).should.be.a.bignumber.that.equals(bn(0));
+            bn(await web3.eth.getBalance(accounts[9])).sub(prevBalanceReceiver)
+                .should.be.a.bignumber.that.equals(bn(1));
+        });
+        it('Should relay signed tx, send ETH, without salt', async function () {
+            const wallet = await Marmo.at(await creator.marmoOf(accounts[1]));
+            await web3.eth.sendTransaction({ from: accounts[0], to: wallet.address, value: 1 });
+
+            const dependencies = '0x';
+            const to = accounts[9];
+            const value = 1;
+            const data = '0x';
+            const minGasLimit = 0;
+            const maxGasPrice = bn(10).pow(bn(32));
+            const expiration = bn(10).pow(bn(24));
+
+            const callData = web3.eth.abi.encodeParameters(
+                ["bytes", "address", "uint256", "bytes", "uint256", "uint256", "uint256"],
+                [dependencies, to, value, data, minGasLimit, maxGasPrice.toString(), expiration.toString()]
+            );
+
+            const id = calcId(
+                wallet.address,
+                marmoImp.address,
+                callData
+            );
+
+            const prevBalanceReceiver = bn(await web3.eth.getBalance(accounts[9]));
+            bn(await web3.eth.getBalance(wallet.address)).should.be.a.bignumber.that.equals(bn(1));
+
+            const signature = signHash(id, privs[1]);
+            await wallet.relay(
+                marmoImp.address,
+                callData,
                 signature
             );
 
@@ -143,7 +215,7 @@ contract('Marmo wallets', function (accounts) {
             const salt = '0x';
             const expiration = await Helper.getBlockTime() + 60;
 
-            const id = await wallet.encodeTransactionData(
+            const callData = encodeImpData(
                 dependencies,
                 to,
                 value,
@@ -154,16 +226,16 @@ contract('Marmo wallets', function (accounts) {
                 expiration
             );
 
+            const id = calcId(
+                wallet.address,
+                marmoImp.address,
+                callData
+            );
+
             const signature = signHash(id, privs[1]);
             await wallet.relay(
-                dependencies,
-                to,
-                value,
-                data,
-                minGasLimit,
-                maxGasPrice,
-                salt,
-                expiration,
+                marmoImp.address,
+                callData,
                 signature
             );
 
@@ -183,7 +255,7 @@ contract('Marmo wallets', function (accounts) {
             const salt = '0x1';
             const expiration = bn(10).pow(bn(24));
 
-            const id = await wallet.encodeTransactionData(
+            const callData = encodeImpData(
                 dependencies,
                 to,
                 value,
@@ -194,31 +266,25 @@ contract('Marmo wallets', function (accounts) {
                 expiration
             );
 
+            const id = calcId(
+                wallet.address,
+                marmoImp.address,
+                callData
+            );
+
             const prevBalanceReceiver = bn(await web3.eth.getBalance(accounts[9]));
             bn(await web3.eth.getBalance(wallet.address)).should.be.a.bignumber.that.equals(bn(1));
 
             const signature = signHash(id, privs[2]);
             await Helper.tryCatchRevert(wallet.relay(
-                dependencies,
-                to,
-                value,
-                data,
-                minGasLimit,
-                maxGasPrice,
-                salt,
-                expiration,
+                marmoImp.address,
+                callData,
                 signature
             ), 'Invalid signature');
 
             await Helper.tryCatchRevert(wallet.relay(
-                dependencies,
-                to,
-                value,
-                data,
-                minGasLimit,
-                maxGasPrice,
-                salt,
-                expiration,
+                marmoImp.address,
+                callData,
                 '0x'
             ), 'Invalid signature');
 
@@ -237,7 +303,7 @@ contract('Marmo wallets', function (accounts) {
             const dsalt = '0x1';
             const dexpiration = bn(10).pow(bn(24));
 
-            const idDependency = await wallet.encodeTransactionData(
+            const dcallData = encodeImpData(
                 ddependencies,
                 dto,
                 dvalue,
@@ -248,22 +314,22 @@ contract('Marmo wallets', function (accounts) {
                 dexpiration
             );
 
+            const did = calcId(
+                wallet.address,
+                marmoImp.address,
+                dcallData
+            );
+
             await web3.eth.sendTransaction({ from: accounts[0], to: wallet.address, value: 1 });
 
-            const dsignature = signHash(idDependency, privs[1]);
+            const dsignature = signHash(did, privs[1]);
             await wallet.relay(
-                ddependencies,
-                dto,
-                dvalue,
-                ddata,
-                dminGasLimit,
-                dmaxGasPrice,
-                dsalt,
-                dexpiration,
+                marmoImp.address,
+                dcallData,
                 dsignature
             );
 
-            (await wallet.relayedBy(idDependency)).should.be.equal(accounts[0]);
+            (await wallet.relayedBy(did)).should.be.equal(accounts[0]);
 
             const dependencies = eutils.bufferToHex(
                 Buffer.concat([
@@ -276,7 +342,7 @@ contract('Marmo wallets', function (accounts) {
                                 type: 'bytes32',
                                 name: 'id',
                             }],
-                        }, [idDependency])
+                        }, [did])
                     ),
                 ])
             );
@@ -289,7 +355,7 @@ contract('Marmo wallets', function (accounts) {
             const salt = '0x2';
             const expiration = await Helper.getBlockTime() + 60;
 
-            const id = await wallet.encodeTransactionData(
+            const calldata = encodeImpData(
                 dependencies,
                 to,
                 value,
@@ -300,19 +366,19 @@ contract('Marmo wallets', function (accounts) {
                 expiration
             );
 
+            const id = calcId(
+                wallet.address,
+                marmoImp.address,
+                calldata
+            );
+
             const prevBalanceReceiver = bn(await web3.eth.getBalance(accounts[8]));
             bn(await web3.eth.getBalance(wallet.address)).should.be.a.bignumber.that.equals(bn(2));
 
             const signature = signHash(id, privs[1]);
             await wallet.relay(
-                dependencies,
-                to,
-                value,
-                data,
-                minGasLimit,
-                maxGasPrice,
-                salt,
-                expiration,
+                marmoImp.address,
+                calldata,
                 signature
             );
 
@@ -331,7 +397,7 @@ contract('Marmo wallets', function (accounts) {
             const dsalt = '0xaaaaaa12';
             const dexpiration = bn(10).pow(bn(24));
 
-            const idDependency = await wallet.encodeTransactionData(
+            const dcallData = encodeImpData(
                 ddependencies,
                 dto,
                 dvalue,
@@ -340,6 +406,12 @@ contract('Marmo wallets', function (accounts) {
                 dmaxGasPrice,
                 dsalt,
                 dexpiration
+            );
+
+            const did = calcId(
+                wallet.address,
+                marmoImp.address,
+                dcallData
             );
 
             const dependencies = eutils.bufferToHex(
@@ -353,7 +425,7 @@ contract('Marmo wallets', function (accounts) {
                                 type: 'bytes32',
                                 name: 'id',
                             }],
-                        }, [idDependency])
+                        }, [did])
                     ),
                 ])
             );
@@ -366,7 +438,7 @@ contract('Marmo wallets', function (accounts) {
             const salt = '0x3';
             const expiration = await Helper.getBlockTime() + 60;
 
-            const id = await wallet.encodeTransactionData(
+            const calldata = encodeImpData(
                 dependencies,
                 to,
                 value,
@@ -377,16 +449,16 @@ contract('Marmo wallets', function (accounts) {
                 expiration
             );
 
+            const id = calcId(
+                wallet.address,
+                marmoImp.address,
+                calldata
+            );
+
             const signature = signHash(id, privs[1]);
             await Helper.tryCatchRevert(wallet.relay(
-                dependencies,
-                to,
-                value,
-                data,
-                minGasLimit,
-                maxGasPrice,
-                salt,
-                expiration,
+                marmoImp.address,
+                calldata,
                 signature
             ), 'Dependency is not satisfied');
         });
@@ -401,7 +473,7 @@ contract('Marmo wallets', function (accounts) {
             const salt = '0x4';
             const expiration = bn(10).pow(bn(24));
 
-            const id = await wallet.encodeTransactionData(
+            const calldata = encodeImpData(
                 dependencies,
                 to,
                 value,
@@ -412,29 +484,23 @@ contract('Marmo wallets', function (accounts) {
                 expiration
             );
 
+            const id = calcId(
+                wallet.address,
+                marmoImp.address,
+                calldata
+            );
+
             const signature = signHash(id, privs[1]);
 
             await wallet.relay(
-                dependencies,
-                to,
-                value,
-                data,
-                minGasLimit,
-                maxGasPrice,
-                salt,
-                expiration,
+                marmoImp.address,
+                calldata,
                 signature
             );
 
             await Helper.tryCatchRevert(wallet.relay(
-                dependencies,
-                to,
-                value,
-                data,
-                minGasLimit,
-                maxGasPrice,
-                salt,
-                expiration,
+                marmoImp.address,
+                calldata,
                 signature
             ), 'Intent already relayed');
         });
@@ -454,7 +520,7 @@ contract('Marmo wallets', function (accounts) {
             const prevBalanceReceiver = bn(await web3.eth.getBalance(accounts[9]));
             bn(await web3.eth.getBalance(wallet.address)).should.be.a.bignumber.that.equals(bn(1));
 
-            await wallet.relay(
+            const calldata = encodeImpData(
                 dependencies,
                 to,
                 value,
@@ -462,7 +528,12 @@ contract('Marmo wallets', function (accounts) {
                 minGasLimit,
                 maxGasPrice,
                 salt,
-                expiration,
+                expiration
+            );
+
+            await wallet.relay(
+                marmoImp.address,
+                calldata,
                 '0x',
                 {
                     from: accounts[1],
@@ -498,7 +569,7 @@ contract('Marmo wallets', function (accounts) {
             const salt = '0x6';
             const expiration = await Helper.getBlockTime() + 60;
 
-            const id = await wallet.encodeTransactionData(
+            const calldata = encodeImpData(
                 dependencies,
                 to,
                 value,
@@ -509,16 +580,16 @@ contract('Marmo wallets', function (accounts) {
                 expiration
             );
 
+            const id = calcId(
+                wallet.address,
+                marmoImp.address,
+                calldata
+            );
+
             const signature = signHash(id, privs[1]);
             await Helper.tryCatchRevert(wallet.relay(
-                dependencies,
-                to,
-                value,
-                data,
-                minGasLimit,
-                maxGasPrice,
-                salt,
-                expiration,
+                marmoImp.address,
+                calldata,
                 signature
             ), 'gasleft too low');
 
@@ -550,7 +621,7 @@ contract('Marmo wallets', function (accounts) {
             const salt = '0x6';
             const expiration = await Helper.getBlockTime() + 60;
 
-            const id = await wallet.encodeTransactionData(
+            const calldata = encodeImpData(
                 dependencies,
                 to,
                 value,
@@ -561,16 +632,16 @@ contract('Marmo wallets', function (accounts) {
                 expiration
             );
 
+            const id = calcId(
+                wallet.address,
+                marmoImp.address,
+                calldata
+            );
+
             const signature = signHash(id, privs[1]);
             await Helper.tryCatchRevert(wallet.relay(
-                dependencies,
-                to,
-                value,
-                data,
-                minGasLimit,
-                maxGasPrice,
-                salt,
-                expiration,
+                marmoImp.address,
+                calldata,
                 signature
             ), 'Gas price too high');
 
@@ -602,7 +673,7 @@ contract('Marmo wallets', function (accounts) {
             const salt = '0x9';
             const expiration = await Helper.getBlockTime() - 60;
 
-            const id = await wallet.encodeTransactionData(
+            const calldata = encodeImpData(
                 dependencies,
                 to,
                 value,
@@ -613,16 +684,16 @@ contract('Marmo wallets', function (accounts) {
                 expiration
             );
 
+            const id = calcId(
+                wallet.address,
+                marmoImp.address,
+                calldata
+            );
+
             const signature = signHash(id, privs[1]);
             await Helper.tryCatchRevert(wallet.relay(
-                dependencies,
-                to,
-                value,
-                data,
-                minGasLimit,
-                maxGasPrice,
-                salt,
-                expiration,
+                marmoImp.address,
+                calldata,
                 signature
             ), 'Intent is expired');
 
@@ -641,7 +712,7 @@ contract('Marmo wallets', function (accounts) {
             const salt = '0x10';
             const expiration = await Helper.getBlockTime() + 180;
 
-            const id = await wallet.encodeTransactionData(
+            const calldata = encodeImpData(
                 dependencies,
                 to,
                 value,
@@ -652,16 +723,16 @@ contract('Marmo wallets', function (accounts) {
                 expiration
             );
 
+            const id = calcId(
+                wallet.address,
+                marmoImp.address,
+                calldata
+            );
+
             const signature = signHash(id, privs[1]);
             await wallet.relay(
-                dependencies,
-                to,
-                value,
-                data,
-                minGasLimit,
-                maxGasPrice,
-                salt,
-                expiration,
+                marmoImp.address,
+                calldata,
                 signature
             );
 
@@ -679,7 +750,7 @@ contract('Marmo wallets', function (accounts) {
             const salt = '0x11';
             const expiration = await Helper.getBlockTime() + 180;
 
-            const id = await wallet.encodeTransactionData(
+            const calldata = encodeImpData(
                 dependencies,
                 to,
                 value,
@@ -690,16 +761,16 @@ contract('Marmo wallets', function (accounts) {
                 expiration
             );
 
+            const id = calcId(
+                wallet.address,
+                marmoImp.address,
+                calldata
+            );
+
             const signature = signHash(id, privs[1]);
             await wallet.relay(
-                dependencies,
-                to,
-                value,
-                data,
-                minGasLimit,
-                maxGasPrice,
-                salt,
-                expiration,
+                marmoImp.address,
+                calldata,
                 signature
             );
 
@@ -730,7 +801,7 @@ contract('Marmo wallets', function (accounts) {
             const salt = '0x12';
             const expiration = await Helper.getBlockTime() + 240;
 
-            const id = await wallet.encodeTransactionData(
+            const calldata = encodeImpData(
                 dependencies,
                 to,
                 value,
@@ -741,16 +812,16 @@ contract('Marmo wallets', function (accounts) {
                 expiration
             );
 
+            const id = calcId(
+                wallet.address,
+                marmoImp.address,
+                calldata
+            );
+
             const signature = signHash(id, privs[1]);
             await wallet.relay(
-                dependencies,
-                to,
-                value,
-                data,
-                minGasLimit,
-                maxGasPrice,
-                salt,
-                expiration,
+                marmoImp.address,
+                calldata,
                 signature
             );
 
@@ -771,7 +842,7 @@ contract('Marmo wallets', function (accounts) {
             const salt = '0x12';
             const expiration = await Helper.getBlockTime() + 240;
 
-            const id = await wallet.encodeTransactionData(
+            const calldata = encodeImpData(
                 dependencies,
                 to,
                 value,
@@ -782,16 +853,16 @@ contract('Marmo wallets', function (accounts) {
                 expiration
             );
 
+            const id = calcId(
+                wallet.address,
+                marmoImp.address,
+                calldata
+            );
+
             const signature = signHash(id, privs[1]);
             await wallet.relay(
-                dependencies,
-                to,
-                value,
-                data,
-                minGasLimit,
-                maxGasPrice,
-                salt,
-                expiration,
+                marmoImp.address,
+                calldata,
                 signature
             );
 
@@ -814,7 +885,7 @@ contract('Marmo wallets', function (accounts) {
             const d1salt = '0x3';
             const d1expiration = bn(10).pow(bn(24));
 
-            const id1Dependency = await wallet.encodeTransactionData(
+            const calldata1Dependency = encodeImpData(
                 d1dependencies,
                 d1to,
                 d1value,
@@ -823,6 +894,12 @@ contract('Marmo wallets', function (accounts) {
                 d1maxGasPrice,
                 d1salt,
                 d1expiration
+            );
+
+            const id1Dependency = calcId(
+                wallet.address,
+                marmoImp.address,
+                calldata1Dependency
             );
 
             const d2dependencies = '0x';
@@ -834,7 +911,7 @@ contract('Marmo wallets', function (accounts) {
             const d2salt = '0x3';
             const d2expiration = bn(10).pow(bn(24));
 
-            const id2Dependency = await wallet2.encodeTransactionData(
+            const calldata2Dependency = encodeImpData(
                 d2dependencies,
                 d2to,
                 d2value,
@@ -845,30 +922,24 @@ contract('Marmo wallets', function (accounts) {
                 d2expiration
             );
 
+            const id2Dependency = calcId(
+                wallet2.address,
+                marmoImp.address,
+                calldata1Dependency
+            );
+
             const d1signature = signHash(id1Dependency, privs[1]);
             const d2signature = signHash(id2Dependency, privs[2]);
 
             await wallet.relay(
-                d1dependencies,
-                d1to,
-                d1value,
-                d1data,
-                d1minGasLimit,
-                d1maxGasPrice,
-                d1salt,
-                d1expiration,
+                marmoImp.address,
+                calldata1Dependency,
                 d1signature
             );
 
             await wallet2.relay(
-                d2dependencies,
-                d2to,
-                d2value,
-                d2data,
-                d2minGasLimit,
-                d2maxGasPrice,
-                d2salt,
-                d2expiration,
+                marmoImp.address,
+                calldata2Dependency,
                 d2signature
             );
 
@@ -903,7 +974,7 @@ contract('Marmo wallets', function (accounts) {
             const salt = '0x2';
             const expiration = await Helper.getBlockTime() + 60;
 
-            const id = await wallet.encodeTransactionData(
+            const calldata = encodeImpData(
                 dependencies,
                 to,
                 value,
@@ -914,16 +985,16 @@ contract('Marmo wallets', function (accounts) {
                 expiration
             );
 
+            const id = calcId(
+                wallet.address,
+                marmoImp.address,
+                calldata
+            );
+
             const signature = signHash(id, privs[1]);
             await wallet.relay(
-                dependencies,
-                to,
-                value,
-                data,
-                minGasLimit,
-                maxGasPrice,
-                salt,
-                expiration,
+                marmoImp.address,
+                calldata,
                 signature
             );
 
@@ -946,7 +1017,7 @@ contract('Marmo wallets', function (accounts) {
             const d1salt = '0x6';
             const d1expiration = bn(10).pow(bn(24));
 
-            const id1Dependency = await wallet.encodeTransactionData(
+            const calldata1Dependency = encodeImpData(
                 d1dependencies,
                 d1to,
                 d1value,
@@ -955,6 +1026,12 @@ contract('Marmo wallets', function (accounts) {
                 d1maxGasPrice,
                 d1salt,
                 d1expiration
+            );
+
+            const id1Dependency = calcId(
+                wallet.address,
+                marmoImp.address,
+                calldata1Dependency
             );
 
             const d2dependencies = '0x';
@@ -966,7 +1043,7 @@ contract('Marmo wallets', function (accounts) {
             const d2salt = '0x5';
             const d2expiration = bn(10).pow(bn(24));
 
-            const id2Dependency = await wallet2.encodeTransactionData(
+            const calldata2Dependency = encodeImpData(
                 d2dependencies,
                 d2to,
                 d2value,
@@ -977,17 +1054,17 @@ contract('Marmo wallets', function (accounts) {
                 d2expiration
             );
 
+            const id2Dependency = calcId(
+                wallet2.address,
+                marmoImp.address,
+                calldata1Dependency
+            );
+
             const d1signature = signHash(id1Dependency, privs[1]);
 
             await wallet.relay(
-                d1dependencies,
-                d1to,
-                d1value,
-                d1data,
-                d1minGasLimit,
-                d1maxGasPrice,
-                d1salt,
-                d1expiration,
+                marmoImp.address,
+                calldata1Dependency,
                 d1signature
             );
 
@@ -1022,7 +1099,7 @@ contract('Marmo wallets', function (accounts) {
             const salt = '0x24';
             const expiration = await Helper.getBlockTime() + 60;
 
-            const id = await wallet.encodeTransactionData(
+            const calldata = encodeImpData(
                 dependencies,
                 to,
                 value,
@@ -1033,16 +1110,16 @@ contract('Marmo wallets', function (accounts) {
                 expiration
             );
 
+            const id = calcId(
+                wallet.address,
+                marmoImp.address,
+                calldata
+            );
+
             const signature = signHash(id, privs[1]);
             await Helper.tryCatchRevert(wallet.relay(
-                dependencies,
-                to,
-                value,
-                data,
-                minGasLimit,
-                maxGasPrice,
-                salt,
-                expiration,
+                marmoImp.address,
+                calldata,
                 signature
             ), 'Dependency is not satisfied');
 
@@ -1077,7 +1154,7 @@ contract('Marmo wallets', function (accounts) {
             const salt = '0x13';
             const expiration = await Helper.getBlockTime() + 86400;
 
-            const id = await wallet.encodeTransactionData(
+            const calldata = encodeImpData(
                 dependencies,
                 to,
                 value,
@@ -1086,6 +1163,12 @@ contract('Marmo wallets', function (accounts) {
                 maxGasPrice,
                 salt,
                 expiration
+            );
+
+            const id = calcId(
+                wallet.address,
+                marmoImp.address,
+                calldata
             );
 
             const signature = signHash(id, privs[1]);
@@ -1108,7 +1191,7 @@ contract('Marmo wallets', function (accounts) {
             const csalt = '0x14';
             const cexpiration = await Helper.getBlockTime() + 86400;
 
-            const cid = await wallet.encodeTransactionData(
+            const ccalldata = encodeImpData(
                 cdependencies,
                 cto,
                 cvalue,
@@ -1119,17 +1202,17 @@ contract('Marmo wallets', function (accounts) {
                 cexpiration
             );
 
+            const cid = calcId(
+                wallet.address,
+                marmoImp.address,
+                ccalldata
+            );
+
             const csignature = signHash(cid, privs[1]);
 
             await wallet.relay(
-                cdependencies,
-                cto,
-                cvalue,
-                cdata,
-                cminGasLimit,
-                cmaxGasPrice,
-                csalt,
-                cexpiration,
+                marmoImp.address,
+                ccalldata,
                 csignature
             );
 
@@ -1137,14 +1220,8 @@ contract('Marmo wallets', function (accounts) {
 
             // Try to relay transfer
             await Helper.tryCatchRevert(wallet.relay(
-                dependencies,
-                to,
-                value,
-                data,
-                minGasLimit,
-                maxGasPrice,
-                salt,
-                expiration,
+                marmoImp.address,
+                calldata,
                 signature
             ), 'Intent was canceled');
 
@@ -1178,7 +1255,7 @@ contract('Marmo wallets', function (accounts) {
             const salt = '0x14';
             const expiration = await Helper.getBlockTime() + 86400;
 
-            const id = await wallet.encodeTransactionData(
+            const calldata = encodeImpData(
                 dependencies,
                 to,
                 value,
@@ -1189,6 +1266,12 @@ contract('Marmo wallets', function (accounts) {
                 expiration
             );
 
+            const id = calcId(
+                wallet.address,
+                marmoImp.address,
+                calldata
+            );
+
             const signature = signHash(id, privs[1]);
 
             // Try to cancel intent
@@ -1197,14 +1280,8 @@ contract('Marmo wallets', function (accounts) {
 
             // Relay ERC20 transfer should success
             await wallet.relay(
-                dependencies,
-                to,
-                value,
-                data,
-                minGasLimit,
-                maxGasPrice,
-                salt,
-                expiration,
+                marmoImp.address,
+                calldata,
                 signature
             );
 
@@ -1227,7 +1304,7 @@ contract('Marmo wallets', function (accounts) {
             const salt = '0x16';
             const expiration = await Helper.getBlockTime() + 86400;
 
-            const id = await wallet.encodeTransactionData(
+            const calldata = encodeImpData(
                 dependencies,
                 to,
                 value,
@@ -1238,18 +1315,18 @@ contract('Marmo wallets', function (accounts) {
                 expiration
             );
 
+            const id = calcId(
+                wallet.address,
+                marmoImp.address,
+                calldata
+            );
+
             const signature = signHash(id, privs[1]);
 
             // Relay intent
             await wallet.relay(
-                dependencies,
-                to,
-                value,
-                data,
-                minGasLimit,
-                maxGasPrice,
-                salt,
-                expiration,
+                marmoImp.address,
+                calldata,
                 signature
             );
 
@@ -1271,7 +1348,7 @@ contract('Marmo wallets', function (accounts) {
             const csalt = '0x17';
             const cexpiration = await Helper.getBlockTime() + 86400;
 
-            const cid = await wallet.encodeTransactionData(
+            const ccalldata = encodeImpData(
                 cdependencies,
                 cto,
                 cvalue,
@@ -1282,23 +1359,33 @@ contract('Marmo wallets', function (accounts) {
                 cexpiration
             );
 
+            const cid = calcId(
+                wallet.address,
+                marmoImp.address,
+                ccalldata
+            );
+
             const csignature = signHash(cid, privs[1]);
 
             const cancelReceipt = await wallet.relay(
-                cdependencies,
-                cto,
-                cvalue,
-                cdata,
-                cminGasLimit,
-                cmaxGasPrice,
-                csalt,
-                cexpiration,
+                marmoImp.address,
+                ccalldata,
                 csignature
             );
 
             (await wallet.isCanceled(id)).should.be.equals(false);
             (await wallet.relayedBy(id)).should.be.equals(accounts[0]);
-            (cancelReceipt.logs[0].args._success).should.be.equals(false);
+
+            const log = web3.eth.abi.decodeLog([{
+                type: 'bool',
+                name: '_success'
+            },{
+                type: 'bytes',
+                name: '_result',
+                indexed: true
+            }], cancelReceipt.receipt.rawLogs[1].data, []);
+
+            (log._success).should.be.equals(false);
         });
         it('Should fail to cancel intent if already canceled', async function () {
             const wallet = await Marmo.at(await creator.marmoOf(accounts[1]));
@@ -1316,7 +1403,7 @@ contract('Marmo wallets', function (accounts) {
             const salt = '0x19';
             const expiration = await Helper.getBlockTime() + 86400;
 
-            const id = await wallet.encodeTransactionData(
+            const calldata = encodeImpData(
                 dependencies,
                 to,
                 value,
@@ -1325,6 +1412,12 @@ contract('Marmo wallets', function (accounts) {
                 maxGasPrice,
                 salt,
                 expiration
+            );
+
+            const id = calcId(
+                wallet.address,
+                marmoImp.address,
+                calldata
             );
 
             // Create cancel intent
@@ -1345,7 +1438,7 @@ contract('Marmo wallets', function (accounts) {
             const csalt = '0x17';
             const cexpiration = await Helper.getBlockTime() + 86400;
 
-            const cid = await wallet.encodeTransactionData(
+            const ccalldata = encodeImpData(
                 cdependencies,
                 cto,
                 cvalue,
@@ -1354,6 +1447,12 @@ contract('Marmo wallets', function (accounts) {
                 cmaxGasPrice,
                 csalt,
                 cexpiration
+            );
+
+            const cid = calcId(
+                wallet.address,
+                marmoImp.address,
+                ccalldata
             );
 
             const c2dependencies = '0x';
@@ -1373,7 +1472,7 @@ contract('Marmo wallets', function (accounts) {
             const c2salt = '0x18';
             const c2expiration = await Helper.getBlockTime() + 86400;
 
-            const c2id = await wallet.encodeTransactionData(
+            const c2calldata = encodeImpData(
                 c2dependencies,
                 c2to,
                 c2value,
@@ -1384,36 +1483,50 @@ contract('Marmo wallets', function (accounts) {
                 c2expiration
             );
 
+            const c2id = calcId(
+                wallet.address,
+                marmoImp.address,
+                c2calldata
+            );
+
             const csignature = signHash(cid, privs[1]);
             const c2signature = signHash(c2id, privs[1]);
 
             const cancelReceipt1 = await wallet.relay(
-                cdependencies,
-                cto,
-                cvalue,
-                cdata,
-                cminGasLimit,
-                cmaxGasPrice,
-                csalt,
-                cexpiration,
+                marmoImp.address,
+                ccalldata,
                 csignature
             );
 
             const cancelReceipt2 = await wallet.relay(
-                c2dependencies,
-                c2to,
-                c2value,
-                c2data,
-                c2minGasLimit,
-                c2maxGasPrice,
-                c2salt,
-                c2expiration,
+                marmoImp.address,
+                c2calldata,
                 c2signature
             );
 
             (await wallet.isCanceled(id)).should.be.equals(true);
-            (cancelReceipt1.logs[0].args._success).should.be.equals(true);
-            (cancelReceipt2.logs[0].args._success).should.be.equals(false);
+
+            const log1 = web3.eth.abi.decodeLog([{
+                type: 'bool',
+                name: '_success'
+            },{
+                type: 'bytes',
+                name: '_result',
+                indexed: true
+            }], cancelReceipt1.receipt.rawLogs[1].data, []);
+
+            (log1._success).should.be.equals(true);
+
+            const log2 = web3.eth.abi.decodeLog([{
+                type: 'bool',
+                name: '_success'
+            },{
+                type: 'bytes',
+                name: '_result',
+                indexed: true
+            }], cancelReceipt2.receipt.rawLogs[1].data, []);
+
+            (log2._success).should.be.equals(false);
         });
     });
 });
