@@ -1,6 +1,6 @@
 const Marmo = artifacts.require('./Marmo.sol');
-const MarmoCreator = artifacts.require('./MarmoFactory.sol');
 const MarmoImp = artifacts.require('./MarmoImp.sol');
+const MarmoStork = artifacts.require('./MarmoStork.sol');
 const DepsUtils = artifacts.require('./DepsUtils.sol');
 const TestERC20 = artifacts.require('./TestERC20.sol');
 const TestOutOfGasContract = artifacts.require('./TestOutOfGasContract.sol');
@@ -88,14 +88,14 @@ contract('Marmo wallets', function (accounts) {
         }
 
         // Setup contracts
-        creator = await MarmoCreator.new();
+        creator = await MarmoStork.new();
         marmoImp = await MarmoImp.new();
         depsUtils = await DepsUtils.new();
         testToken = await TestERC20.new();
     });
     describe('Create marmo wallets', function () {
         it('Should reveal the marmo wallet', async function () {
-            const creator = await MarmoCreator.new();
+            const creator = await MarmoStork.new();
             await creator.reveal(accounts[0]);
         });
         it('Should predict the Marmo wallet', async function () {
