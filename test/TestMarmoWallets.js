@@ -40,7 +40,7 @@ function signHash (hash, priv) {
     return eutils.bufferToHex(Buffer.concat([sig.r, sig.s, eutils.toBuffer(sig.v)]));
 }
 
-function encodeImpData(
+function encodeImpData (
     dependencies,
     to,
     value,
@@ -51,12 +51,12 @@ function encodeImpData(
     expiration
 ) {
     return web3.eth.abi.encodeParameters(
-        ["bytes", "address", "uint256", "bytes", "uint256", "uint256", "uint256", "bytes32"],
+        ['bytes', 'address', 'uint256', 'bytes', 'uint256', 'uint256', 'uint256', 'bytes32'],
         [dependencies, to, value, data, minGasLimit.toString(), maxGasPrice.toString(), expiration.toString(), salt]
     );
 }
 
-function calcId(
+function calcId (
     wallet,
     implementation,
     data
@@ -64,12 +64,13 @@ function calcId(
     return web3.utils.soliditySha3(
         { t: 'address', v: wallet },
         { t: 'address', v: implementation },
-        { t: 'bytes32', v: 
+        { t: 'bytes32',
+            v:
             web3.utils.soliditySha3(
                 { t: 'bytes', v: data }
-            )
+            ),
         }
-    )
+    );
 }
 
 contract('Marmo wallets', function (accounts) {
@@ -166,7 +167,7 @@ contract('Marmo wallets', function (accounts) {
             const expiration = bn(10).pow(bn(24));
 
             const callData = web3.eth.abi.encodeParameters(
-                ["bytes", "address", "uint256", "bytes", "uint256", "uint256", "uint256"],
+                ['bytes', 'address', 'uint256', 'bytes', 'uint256', 'uint256', 'uint256'],
                 [dependencies, to, value, data, minGasLimit, maxGasPrice.toString(), expiration.toString()]
             );
 
@@ -1057,7 +1058,7 @@ contract('Marmo wallets', function (accounts) {
             const id2Dependency = calcId(
                 wallet2.address,
                 marmoImp.address,
-                calldata1Dependency
+                calldata2Dependency
             );
 
             const d1signature = signHash(id1Dependency, privs[1]);
@@ -1378,11 +1379,11 @@ contract('Marmo wallets', function (accounts) {
 
             const log = web3.eth.abi.decodeLog([{
                 type: 'bool',
-                name: '_success'
-            },{
+                name: '_success',
+            }, {
                 type: 'bytes',
                 name: '_result',
-                indexed: true
+                indexed: true,
             }], cancelReceipt.receipt.rawLogs[1].data, []);
 
             (log._success).should.be.equals(false);
@@ -1508,22 +1509,22 @@ contract('Marmo wallets', function (accounts) {
 
             const log1 = web3.eth.abi.decodeLog([{
                 type: 'bool',
-                name: '_success'
-            },{
+                name: '_success',
+            }, {
                 type: 'bytes',
                 name: '_result',
-                indexed: true
+                indexed: true,
             }], cancelReceipt1.receipt.rawLogs[1].data, []);
 
             (log1._success).should.be.equals(true);
 
             const log2 = web3.eth.abi.decodeLog([{
                 type: 'bool',
-                name: '_success'
-            },{
+                name: '_success',
+            }, {
                 type: 'bytes',
                 name: '_result',
-                indexed: true
+                indexed: true,
             }], cancelReceipt2.receipt.rawLogs[1].data, []);
 
             (log2._success).should.be.equals(false);
