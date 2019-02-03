@@ -1417,8 +1417,8 @@ contract('Marmo wallets', function (accounts) {
             (cancelReceipt2.logs[0].args._success).should.be.equals(false);
         });
     });
-    describe("Receive txs", function() {
-        it("Should receive ETH using transfer", async function () {
+    describe('Receive txs', function () {
+        it('Should receive ETH using transfer', async function () {
             const transferUtil = await TestTransfer.new();
 
             // Random wallet, not related
