@@ -4,6 +4,7 @@ const MarmoStork = artifacts.require('./MarmoStork.sol');
 const DepsUtils = artifacts.require('./DepsUtils.sol');
 const TestERC20 = artifacts.require('./TestERC20.sol');
 const TestOutOfGasContract = artifacts.require('./TestOutOfGasContract.sol');
+const TestTransfer = artifacts.require('./TestTransfer.sol');
 
 const eutils = require('ethereumjs-util');
 const Helper = require('./Helper.js');
@@ -1528,6 +1529,19 @@ contract('Marmo wallets', function (accounts) {
             }], cancelReceipt2.receipt.rawLogs[1].data, []);
 
             (log2._success).should.be.equals(false);
+        });
+    });
+    describe('Receive txs', function () {
+        it('Should receive ETH using transfer', async function () {
+            const transferUtil = await TestTransfer.new();
+
+            // Random wallet, not related
+            await creator.reveal(transferUtil.address);
+            const rwallet = await creator.marmoOf(transferUtil.address);
+
+            await transferUtil.transfer(rwallet, { from: accounts[9], value: 100 });
+
+            bn(await web3.eth.getBalance(rwallet)).should.be.a.bignumber.that.equals(bn(100));
         });
     });
 });
