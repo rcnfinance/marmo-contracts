@@ -65,13 +65,14 @@ contract MarmoStork {
         );
     }
 
-    function reveal(address _signer) external returns (address p) {
+    function reveal(address _signer) external {
         bytes memory proxyCode = bytecode;
+        Marmo p;
 
         assembly {
             p := create2(0, add(proxyCode, 0x20), mload(proxyCode), _signer)
         }
 
-        Marmo(address(uint160(address(p)))).init(_signer);
+        p.init(_signer);
     }
 }
