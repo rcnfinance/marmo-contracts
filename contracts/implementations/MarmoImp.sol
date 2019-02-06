@@ -1,5 +1,7 @@
 pragma solidity ^0.5.0;
 
+import "../commons/Math.sol";
+
 
 contract MarmoImp {
     uint256 private constant EXTRA_GAS = 21000;
@@ -24,7 +26,7 @@ contract MarmoImp {
         bytes memory dependency;
         address to;
         uint256 value;
-        uint256 minGasLimit;
+        uint256 maxGasLimit;
         uint256 maxGasPrice;
         uint256 expiration;
 
@@ -33,7 +35,7 @@ contract MarmoImp {
             to,
             value,
             data,
-            minGasLimit,
+            maxGasLimit,
             maxGasPrice,
             expiration
         ) = abi.decode(
@@ -51,9 +53,10 @@ contract MarmoImp {
         require(now < expiration, "Intent is expired");
         require(tx.gasprice < maxGasPrice, "Gas price too high");
         require(_checkDependency(dependency), "Dependency is not satisfied");
-        require(gasleft() - EXTRA_GAS > minGasLimit, "gasleft too low");
 
-        (bool success, bytes memory result) = to.call.gas(gasleft() - EXTRA_GAS).value(value)(data);
+        (bool success, bytes memory result) = to.call.gas(
+            Math.min(block.gaslimit - EXTRA_GAS, maxGasLimit)
+        ).value(value)(data);
 
         emit Receipt(
             id,
