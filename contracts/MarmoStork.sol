@@ -27,7 +27,7 @@ library Bytes {
 // solium-disable max-len
 contract MarmoStork {
     // Compiled Proxy.sol
-    bytes public constant BYTECODE_1 = hex"6080604052348015600f57600080fd5b50606780601d6000396000f3fe6080604052366000803760008036600073";
+    bytes public constant BYTECODE_1 = hex"606780600c6000396000f3fe6080604052366000803760008036600073";
     bytes public constant BYTECODE_2 = hex"5af43d6000803e8015156036573d6000fd5b3d6000f3fea165627a7a7230582033b260661546dd9894b994173484da72335f9efc37248d27e6da483f15afc1350029";
 
     bytes public bytecode;
