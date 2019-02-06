@@ -1,6 +1,6 @@
 const Marmo = artifacts.require('./Marmo.sol');
 const MarmoImp = artifacts.require('./MarmoImp.sol');
-const MarmoStork = artifacts.require('./MarmoStork.sol');
+const MarmoStork = artifacts.require('./MarmoStorkAuto.sol');
 const DepsUtils = artifacts.require('./DepsUtils.sol');
 const TestERC20 = artifacts.require('./TestERC20.sol');
 const TestOutOfGasContract = artifacts.require('./TestOutOfGasContract.sol');
@@ -110,8 +110,8 @@ contract('Marmo wallets', function (accounts) {
             await Helper.tryCatchRevert(creator.reveal(accounts[1]), '', true);
         });
         it('Should fail to init Marmo source', async function () {
-            const marmoSource = await Marmo.at(await creator.marmoSource());
-            await Helper.tryCatchRevert(marmoSource.init(accounts[0]), 'Owner already defined');
+            const marmo = await Marmo.at(await creator.marmo());
+            await Helper.tryCatchRevert(marmo.init(accounts[0]), 'Signer already defined');
         });
     });
     describe('Relay intents', function () {
