@@ -68,7 +68,7 @@ contract MarmoStork {
     // Minimal proxy contract
     // by Agusx1211
     bytes constant CODE1 = hex"60"; // + <size>                                   // Copy code to memory
-    bytes constant CODE2 = hex"80600c6000396000f3fe";                             // Return and deploy contract
+    bytes constant CODE2 = hex"80600b6000396000f3";                               // Return and deploy contract
     bytes constant CODE3 = hex"3660008037600080366000";   // + <pushx> + <source> // Proxy, copy calldata and start delegatecall
     bytes constant CODE4 = hex"5af43d6000803e60003d9160"; // + <return jump>      // Do delegatecall and return jump
     bytes constant CODE5 = hex"57fd5bf3";                                         // Return proxy
