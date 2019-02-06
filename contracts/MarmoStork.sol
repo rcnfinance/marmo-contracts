@@ -65,7 +65,7 @@ contract MarmoStork {
         );
     }
 
-    function reveal(address _signer) external {
+    function reveal(address _signer) external payable {
         bytes memory proxyCode = bytecode;
         Marmo p;
 
@@ -73,6 +73,6 @@ contract MarmoStork {
             p := create2(0, add(proxyCode, 0x20), mload(proxyCode), _signer)
         }
 
-        p.init(_signer);
+        p.init.value(msg.value)(_signer);
     }
 }
