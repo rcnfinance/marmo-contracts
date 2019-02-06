@@ -99,7 +99,7 @@ contract MarmoStork {
             marmoc.init(address(1));
         }
 
-        require(marmoc.signer() == address(1), "init");
+        require(marmoc.signer() == address(1), "Error init Marmo source");
         marmo = address(marmoc);
     }
     
