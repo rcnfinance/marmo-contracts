@@ -4,6 +4,8 @@ import "./commons/SigUtils.sol";
 import "./commons/Ownable.sol";
 
 contract Marmo is Ownable {
+    address private constant INVALID_ADDRESS = address(1);
+
     event Relayed(
         bytes32 indexed _id,
         address _implementation,
@@ -59,6 +61,8 @@ contract Marmo is Ownable {
         }
 
         address _owner = owner;
+
+        assert(_owner != INVALID_ADDRESS);
         require(_owner == msg.sender || _owner == SigUtils.ecrecover2(id, _signature), "Invalid signature");
 
         intentReceipt[id] = _encodeReceipt(false, block.number, msg.sender);

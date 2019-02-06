@@ -109,6 +109,10 @@ contract('Marmo wallets', function (accounts) {
         it('Should fail to reveal if already revealed', async function () {
             await Helper.tryCatchRevert(creator.reveal(accounts[1]), '', true);
         });
+        it('Should fail to init Marmo source', async function () {
+            const marmoSource = await Marmo.at(await creator.marmoSource());
+            await Helper.tryCatchRevert(marmoSource.init(accounts[0]), 'Owner already defined');
+        });
     });
     describe('Relay intents', function () {
         it('Should relay signed tx, send ETH', async function () {
