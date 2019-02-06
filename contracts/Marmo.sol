@@ -1,10 +1,11 @@
 pragma solidity ^0.5.0;
 
 import "./commons/SigUtils.sol";
-import "./commons/Ownable.sol";
 
-contract Marmo is Ownable {
+contract Marmo {
     address private constant INVALID_ADDRESS = address(1);
+
+    address public signer;
 
     event Relayed(
         bytes32 indexed _id,
@@ -21,8 +22,9 @@ contract Marmo is Ownable {
 
     function() external payable {}
 
-    function init(address _owner) external {
-        _init(_owner);
+    function init(address _signer) external payable {
+        require(signer == address(0), "Signer already defined");
+        signer = _signer;
     }
 
     function relayedBy(bytes32 _id) external view returns (address _relayer) {
@@ -60,10 +62,10 @@ contract Marmo is Ownable {
             revert("Unknown error");
         }
 
-        address _owner = owner;
+        address _signer = signer;
 
-        assert(_owner != INVALID_ADDRESS);
-        require(_owner == msg.sender || _owner == SigUtils.ecrecover2(id, _signature), "Invalid signature");
+        assert(_signer != INVALID_ADDRESS);
+        require(_signer == msg.sender || _signer == SigUtils.ecrecover2(id, _signature), "Invalid signature");
 
         intentReceipt[id] = _encodeReceipt(false, block.number, msg.sender);
 

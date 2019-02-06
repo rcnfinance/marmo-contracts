@@ -111,7 +111,7 @@ contract('Marmo wallets', function (accounts) {
         });
         it('Should fail to init Marmo source', async function () {
             const marmoSource = await Marmo.at(await creator.marmoSource());
-            await Helper.tryCatchRevert(marmoSource.init(accounts[0]), 'Owner already defined');
+            await Helper.tryCatchRevert(marmoSource.init(accounts[0]), 'Signer already defined');
         });
     });
     describe('Relay intents', function () {
