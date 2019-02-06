@@ -123,7 +123,7 @@ contract('Marmo wallets', function (accounts) {
             const to = accounts[9];
             const value = 1;
             const data = '0x';
-            const minGasLimit = 0;
+            const minGasLimit = bn(1000000);
             const maxGasPrice = bn(10).pow(bn(32));
             const salt = '0x11115';
             const expiration = bn(10).pow(bn(24));
@@ -216,7 +216,7 @@ contract('Marmo wallets', function (accounts) {
                 }],
             }, [accounts[9], 4]);
 
-            const minGasLimit = 0;
+            const minGasLimit = bn(2000000);
             const maxGasPrice = bn(10).pow(bn(32));
             const salt = '0x';
             const expiration = await Helper.getBlockTime() + 60;
@@ -596,8 +596,11 @@ contract('Marmo wallets', function (accounts) {
             await Helper.tryCatchRevert(wallet.relay(
                 marmoImp.address,
                 calldata,
-                signature
-            ), 'gasleft too low');
+                signature,
+                {
+                    gas: 100000
+                }
+            ), '');
 
             bn(await testToken.balanceOf(accounts[9])).should.be.a.bignumber.that.equals(bn(0));
             bn(await testToken.balanceOf(wallet.address)).should.be.a.bignumber.that.equals(bn(10));
@@ -622,7 +625,7 @@ contract('Marmo wallets', function (accounts) {
                 }],
             }, [accounts[9], 4]);
 
-            const minGasLimit = bn(0);
+            const minGasLimit = bn(1000000);
             const maxGasPrice = bn(5);
             const salt = '0x6';
             const expiration = await Helper.getBlockTime() + 60;
@@ -674,7 +677,7 @@ contract('Marmo wallets', function (accounts) {
                 }],
             }, [accounts[9], 4]);
 
-            const minGasLimit = bn(0);
+            const minGasLimit = bn(1000000);
             const maxGasPrice = bn(10).pow(bn(32));
             const salt = '0x9';
             const expiration = await Helper.getBlockTime() - 60;
@@ -713,7 +716,7 @@ contract('Marmo wallets', function (accounts) {
             const to = wallet.address;
             const value = 0;
             const data = '0x';
-            const minGasLimit = bn(0);
+            const minGasLimit = bn(1000000);
             const maxGasPrice = bn(10).pow(bn(32));
             const salt = '0x10';
             const expiration = await Helper.getBlockTime() + 180;
@@ -751,7 +754,7 @@ contract('Marmo wallets', function (accounts) {
             const to = wallet.address;
             const value = 0;
             const data = '0x';
-            const minGasLimit = bn(0);
+            const minGasLimit = bn(1000000);
             const maxGasPrice = bn(10).pow(bn(32));
             const salt = '0x11';
             const expiration = await Helper.getBlockTime() + 180;
@@ -802,7 +805,7 @@ contract('Marmo wallets', function (accounts) {
                 }],
             }, [accounts[9], 11]);
 
-            const minGasLimit = bn(0);
+            const minGasLimit = bn(1000000);
             const maxGasPrice = bn(10).pow(bn(32));
             const salt = '0x12';
             const expiration = await Helper.getBlockTime() + 240;
@@ -843,7 +846,7 @@ contract('Marmo wallets', function (accounts) {
             const to = testContract.address;
             const value = 0;
             const data = '0x';
-            const minGasLimit = bn(0);
+            const minGasLimit = bn(1000000);
             const maxGasPrice = bn(10).pow(bn(32));
             const salt = '0x12';
             const expiration = await Helper.getBlockTime() + 240;
@@ -1155,7 +1158,7 @@ contract('Marmo wallets', function (accounts) {
                 }],
             }, [accounts[9], 3]);
 
-            const minGasLimit = bn(0);
+            const minGasLimit = bn(1000000);
             const maxGasPrice = bn(10).pow(bn(32));
             const salt = '0x13';
             const expiration = await Helper.getBlockTime() + 86400;
@@ -1192,7 +1195,7 @@ contract('Marmo wallets', function (accounts) {
                 }],
             }, [id]);
 
-            const cminGasLimit = bn(0);
+            const cminGasLimit = bn(900000);
             const cmaxGasPrice = bn(10).pow(bn(32));
             const csalt = '0x14';
             const cexpiration = await Helper.getBlockTime() + 86400;
@@ -1256,7 +1259,7 @@ contract('Marmo wallets', function (accounts) {
                 }],
             }, [accounts[9], 3]);
 
-            const minGasLimit = bn(0);
+            const minGasLimit = bn(1000000);
             const maxGasPrice = bn(10).pow(bn(32));
             const salt = '0x14';
             const expiration = await Helper.getBlockTime() + 86400;
@@ -1305,7 +1308,7 @@ contract('Marmo wallets', function (accounts) {
             const to = wallet.address;
             const value = 0;
             const data = '0x';
-            const minGasLimit = bn(0);
+            const minGasLimit = bn(1000000);
             const maxGasPrice = bn(10).pow(bn(32));
             const salt = '0x16';
             const expiration = await Helper.getBlockTime() + 86400;
@@ -1404,7 +1407,7 @@ contract('Marmo wallets', function (accounts) {
             const to = wallet.address;
             const value = 0;
             const data = '0x';
-            const minGasLimit = bn(0);
+            const minGasLimit = bn(1000000);
             const maxGasPrice = bn(10).pow(bn(32));
             const salt = '0x19';
             const expiration = await Helper.getBlockTime() + 86400;
@@ -1439,7 +1442,7 @@ contract('Marmo wallets', function (accounts) {
                 }],
             }, [id]);
 
-            const cminGasLimit = bn(0);
+            const cminGasLimit = bn(90000);
             const cmaxGasPrice = bn(10).pow(bn(32));
             const csalt = '0x17';
             const cexpiration = await Helper.getBlockTime() + 86400;
