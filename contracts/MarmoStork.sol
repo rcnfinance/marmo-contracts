@@ -40,10 +40,10 @@ contract MarmoStork {
         
         Marmo marmoc = Marmo(_source.toAddress());
         if (marmoc.signer() == address(0)) {
-            marmoc.init(address(1));
+            marmoc.init(address(65536));
         }
 
-        require(marmoc.signer() == address(1), "Error init Marmo source");
+        require(marmoc.signer() == address(65536), "Error init Marmo source");
         marmo = address(marmoc);
     }
     
