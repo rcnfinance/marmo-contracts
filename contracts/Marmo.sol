@@ -3,7 +3,8 @@ pragma solidity ^0.5.0;
 import "./commons/SigUtils.sol";
 
 contract Marmo {
-    address private constant INVALID_ADDRESS = address(1);
+    // Invalid signer address, outside of restricted address range (0 - 65535)
+    address private constant INVALID_ADDRESS = address(65536);
 
     address public signer;
 
