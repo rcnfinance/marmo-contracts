@@ -5,9 +5,7 @@ import "./commons/SigUtils.sol";
 contract Marmo {
     // Invalid signer address, outside of restricted address range (0 - 65535)
     address private constant INVALID_ADDRESS = address(65536);
-
-    // keccak256("marmo.wallet.signer")
-    bytes32 private constant SIGNER_SLOT = 0xe0e7b18766139970beb355f61e042e14531606c39973840714bf8b502bbb96c9;
+    bytes32 private constant SIGNER_SLOT = keccak256("marmo.wallet.signer");
 
     event Relayed(
         bytes32 indexed _id,
