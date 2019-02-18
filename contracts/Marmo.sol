@@ -62,7 +62,6 @@ contract Marmo {
         bytes calldata _data,
         bytes calldata _signature
     ) external payable returns (
-        bool success,
         bytes memory result
     ) {
         bytes32 id = keccak256(
@@ -89,6 +88,7 @@ contract Marmo {
 
         emit Relayed(id, _implementation, _data);
 
+        bool success;
         (success, result) = _implementation.delegatecall(abi.encode(id, _data));
 
         if (!success) {
