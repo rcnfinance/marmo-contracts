@@ -5,8 +5,7 @@ import "./commons/SigUtils.sol";
 contract Marmo {
     // Invalid signer address, outside of restricted address range (0 - 65535)
     address private constant INVALID_ADDRESS = address(65536);
-
-    address public signer;
+    bytes32 private constant SIGNER_SLOT = keccak256("marmo.wallet.signer");
 
     event Relayed(
         bytes32 indexed _id,
@@ -24,9 +23,17 @@ contract Marmo {
     function() external payable {}
 
     function init(address _signer) external payable {
+        address signer;
+        bytes32 signerSlot = SIGNER_SLOT;
+        assembly { signer := sload(signerSlot) }
         require(signer == address(0), "Signer already defined");
-        signer = _signer;
+        assembly { sstore(signerSlot, _signer) }
     }
+
+    function signer() public view returns (address _signer) {
+        bytes32 signerSlot = SIGNER_SLOT;
+        assembly { _signer := sload(signerSlot) }
+    } 
 
     function relayedBy(bytes32 _id) external view returns (address _relayer) {
         (,,_relayer) = _decodeReceipt(intentReceipt[_id]);
@@ -62,9 +69,7 @@ contract Marmo {
             revert("Unknown error");
         }
 
-        address _signer = signer;
-
-        assert(_signer != INVALID_ADDRESS);
+        address _signer = signer();
         require(_signer == msg.sender || _signer == SigUtils.ecrecover2(id, _signature), "Invalid signature");
 
         intentReceipt[id] = _encodeReceipt(false, block.number, msg.sender);
