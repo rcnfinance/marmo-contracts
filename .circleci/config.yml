@@ -28,10 +28,6 @@ jobs:
                 key: v2-dependencies-{{ checksum "package.json" }}
                 paths:
                     - node_modules
-            # Create migrations folder
-            - run:
-                name: Create migrations folder
-                command: mkdir migrations
 
     # The build job
     build:
@@ -75,6 +71,10 @@ jobs:
                 keys:
                 - v2-dependencies-{{ checksum "package.json" }}
                 - v2-dependencies-
+            # Create migrations folder
+            - run:
+                name: Create migrations folder
+                command: mkdir migrations
             # Start ganache
             - run:
                 name: Start ganache instance
