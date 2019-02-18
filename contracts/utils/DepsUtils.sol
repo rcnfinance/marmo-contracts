@@ -2,7 +2,11 @@ pragma solidity ^0.5.0;
 
 import "../Marmo.sol";
 
+// Utils Toolset to use as dependencies
+// in a Marmo Intent
 contract DepsUtils {
+    // Validates if a list of 'intents' was relayed
+    // Returns true if all intents where relayed, false otherwise
     function multipleDeps(Marmo[] calldata _wallets, bytes32[] calldata _ids) external view returns (bool) {
         uint256 size = _wallets.length;
 

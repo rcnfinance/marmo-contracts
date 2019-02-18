@@ -12,7 +12,11 @@ contract MarmoImp {
         bytes _result
     );
 
+    // Performs calls when used as an implementation of a Marmo wallet
+    // It validates dependencies, gas price/limit and expiration time
+    // msg.data = 256 bits ID + N bits raw data
     function() external payable {
+        // Retrieve Intent ID and raw data
         (
             bytes32 id,
             bytes memory data
@@ -23,6 +27,7 @@ contract MarmoImp {
             )
         );
 
+        // Retrieve inputs from data
         bytes memory dependency;
         address to;
         uint256 value;
@@ -50,14 +55,25 @@ contract MarmoImp {
             )
         );
 
+        // Validate Intent not expired, gas price and dependencies
         require(now < expiration, "Intent is expired");
         require(tx.gasprice < maxGasPrice, "Gas price too high");
         require(_checkDependency(dependency), "Dependency is not satisfied");
 
-        (bool success, bytes memory result) = to.call.gas(
-            Math.min(block.gaslimit - EXTRA_GAS, maxGasLimit)
+        // Perform the Intent call
+        // Send max gas limit or maximum possible gas limit
+        // (keep an extra to catch an out of gas)
+        (
+            bool success,
+            bytes memory result
+        ) = to.call.gas(
+            Math.min(
+                block.gaslimit - EXTRA_GAS,
+                maxGasLimit
+            )
         ).value(value)(data);
 
+        // Emit receipt with result of the call
         emit Receipt(
             id,
             success,
@@ -65,6 +81,8 @@ contract MarmoImp {
         );
     }
 
+    // The dependency is a 'staticcall' to a 'target'
+    //  when the call success and it does not returns false, the dependency is satisfied.
     // [160 bits (target) + n bits (data)]
     function _checkDependency(bytes memory _dependency) internal view returns (bool result) {
         if (_dependency.length == 0) {
