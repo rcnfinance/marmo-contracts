@@ -15,9 +15,8 @@ contract Marmo {
     // Invalid signer address, outside of restricted address range (0 - 65535)
     address private constant INVALID_ADDRESS = address(65536);
 
-    // Signer of the Marmo wallet
-    // can perform transactions by signing Intents
-    address public signer;
+    // Random slot to store signer
+    bytes32 private constant SIGNER_SLOT = keccak256("marmo.wallet.signer");
 
     // [1 bit (canceled) 95 bits (block) 160 bits (relayer)]
     mapping(bytes32 => bytes32) private intentReceipt;
@@ -27,9 +26,19 @@ contract Marmo {
     // Inits the wallet, any address can Init
     // it must be called using another contract
     function init(address _signer) external payable {
+        address signer;
+        bytes32 signerSlot = SIGNER_SLOT;
+        assembly { signer := sload(signerSlot) }
         require(signer == address(0), "Signer already defined");
-        signer = _signer;
+        assembly { sstore(signerSlot, _signer) }
     }
+
+    // Signer of the Marmo wallet
+    // can perform transactions by signing Intents
+    function signer() public view returns (address _signer) {
+        bytes32 signerSlot = SIGNER_SLOT;
+        assembly { _signer := sload(signerSlot) }
+    } 
 
     // Address that relayed the `_id` intent
     // address(0) if the intent was not relayed
@@ -87,7 +96,7 @@ contract Marmo {
         }
 
         // Read the signer from storage, avoid multiples 'sload' ops
-        address _signer = signer;
+        address _signer = signer();
 
         // The signer 'INVALID_ADDRESS' is considered invalid and it will always throw
         // this is meant to destroy the wallet safely
