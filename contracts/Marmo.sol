@@ -23,23 +23,40 @@ contract Marmo {
 
     function() external payable {}
 
+    // Inits the wallet
+    // any address can Init, it must be called using another contract
     function init(address _signer) external payable {
         require(signer == address(0), "Signer already defined");
         signer = _signer;
     }
 
+    // Address that relayed an the `_id` intent
+    // address(0) if the intent was not relayed
     function relayedBy(bytes32 _id) external view returns (address _relayer) {
         (,,_relayer) = _decodeReceipt(intentReceipt[_id]);
     }
 
+    // Block when the intent was relayed
+    // 0 if the intent was not relayed
     function relayedAt(bytes32 _id) external view returns (uint256 _block) {
         (,_block,) = _decodeReceipt(intentReceipt[_id]);
     }
 
+    // True if the intent was canceled
+    // An executed intent can't be canceled
+    // A Canceled intent can't be executed
     function isCanceled(bytes32 _id) external view returns (bool _canceled) {
         (_canceled,,) = _decodeReceipt(intentReceipt[_id]);
     }
 
+    // Relay a signed intent
+    //
+    // The imeplementation receives a data containing the id of the intent and it's data,
+    // and it should perform all subsecuent calls.
+    //
+    // The same _implementation and _data can only be relayed once
+    //
+    // Returns the result of the delegatecall execution
     function relay(
         address _implementation,
         bytes calldata _data,
