@@ -28,6 +28,10 @@ jobs:
                 key: v2-dependencies-{{ checksum "package.json" }}
                 paths:
                     - node_modules
+            # Create migrations folder
+            - run:
+                name: Create migrations folder
+                command: mkdir migrations
 
     # The build job
     build:
