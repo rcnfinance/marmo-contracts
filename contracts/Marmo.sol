@@ -88,7 +88,7 @@ contract Marmo {
         // Read receipt only once
         // if the receipt is 0, the Intent was not canceled or relayed
         if (intentReceipt[id] != bytes32(0)) {
-            // Decode the receipt and determine if the Intent was canceled or relayer
+            // Decode the receipt and determine if the Intent was canceled or relayed
             (bool canceled, , address relayer) = _decodeReceipt(intentReceipt[id]);
             require(relayer == address(0), "Intent already relayed");
             require(!canceled, "Intent was canceled");
