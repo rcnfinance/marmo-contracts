@@ -3,7 +3,7 @@ pragma solidity ^0.5.0;
 // Bytes library to concat and transform
 // bytes arrays
 library Bytes {
-    // Concadenates two bytes array
+    // Concatenates two bytes array
     function concat(bytes memory _baseBytes, bytes memory _valueBytes) internal pure returns (bytes memory _out) {
         uint256 blength = _baseBytes.length;
         uint256 vlength = _valueBytes.length;
@@ -22,12 +22,12 @@ library Bytes {
         }
     }
 
-    // Concadenates a bytes array and a bytes1
+    // Concatenates a bytes array and a bytes1
     function concat(bytes memory _a, bytes1 _b) internal pure returns (bytes memory _out) {
         return concat(_a, abi.encodePacked(_b));
     }
 
-    // Concadenates 6 bytes arrays
+    // Concatenates 6 bytes arrays
     function concat(
         bytes memory _a,
         bytes memory _b,
