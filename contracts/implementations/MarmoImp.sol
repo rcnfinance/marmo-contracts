@@ -82,7 +82,7 @@ contract MarmoImp {
     }
 
     // The dependency is a 'staticcall' to a 'target'
-    //  when the call success and it does not returns false, the dependency is satisfied.
+    //  when the call succeeds and it does not return false, the dependency is satisfied.
     // [160 bits (target) + n bits (data)]
     function _checkDependency(bytes memory _dependency) internal view returns (bool result) {
         if (_dependency.length == 0) {
