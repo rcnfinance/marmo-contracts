@@ -1,7 +1,11 @@
-# Description
+# Marmo
+
+![Alt marmo.io](https://marmo.io/assets/img/marmo-imago.svg)
+
+## Description
 Marmo ecosystem contracts
 
-# Simple Summary
+## Simple Summary
 As of today, Ethereum wallets require ETH funds to pay for Gas every time they send a transaction through the network.
 
 Moreover, as the Gas Price required to successfully complete a transaction varies constantly according to market laws, it is not possible to predefine it. This causes some transactions to be sent with insufficient Gas and not be able to access the Network.
