@@ -65,14 +65,14 @@ library Bytes {
     }
 
     function mostSignificantBit(uint256 x) internal pure returns (uint256) {        
-        uint8 l = 0;
+        uint8 o = 0;
         uint8 h = 255;
         
-        while (h > l) {
-            uint8 m = uint8 ((uint16 (l) + uint16 (h)) >> 1);
+        while (h > o) {
+            uint8 m = uint8 ((uint16 (o) + uint16 (h)) >> 1);
             uint256 t = x >> m;
             if (t == 0) h = m - 1;
-            else if (t > 1) l = m + 1;
+            else if (t > 1) o = m + 1;
             else return m;
         }
         
