@@ -63,4 +63,30 @@ library Bytes {
             b := shr(mul(sub(32, mload(_a)), 8), mload(add(_a, 32)))
         }
     }
+
+    function mostSignificantBit(uint256 x) internal pure returns (uint256) {        
+        uint8 l = 0;
+        uint8 h = 255;
+        
+        while (h > l) {
+            uint8 m = uint8 ((uint16 (l) + uint16 (h)) >> 1);
+            uint256 t = x >> m;
+            if (t == 0) h = m - 1;
+            else if (t > 1) l = m + 1;
+            else return m;
+        }
+        
+        return h;
+    }
+
+    function shrink(address _a) internal pure returns (bytes memory b) {
+        uint256 abits = mostSignificantBit(uint256(_a)) + 1;
+        uint256 abytes = abits / 8 + (abits % 8 == 0 ? 0 : 1);
+
+        assembly {
+            b := 0x0
+            mstore(0x0, abytes)
+            mstore(0x20, shl(mul(sub(32, abytes), 8), _a))
+        }
+    }
 }
