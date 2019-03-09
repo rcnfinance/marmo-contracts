@@ -139,6 +139,7 @@ contract Marmo {
             revert("Unknown error");
         }
 
+        emit Canceled(_id);
         intentReceipt[_id] = _encodeReceipt(true, 0, address(0));
     }
 
@@ -169,5 +170,10 @@ contract Marmo {
             _block := and(shr(160, _receipt), 0x7fffffffffffffffffffffff)
             _relayer := and(_receipt, 0xffffffffffffffffffffffffffffffffffffffff)
         }
+    }
+
+    // Used to receive ERC721 tokens
+    function onERC721Received(address, address, uint256, bytes calldata) external pure returns (bytes4) {
+        return bytes4(0x150b7a02);
     }
 }

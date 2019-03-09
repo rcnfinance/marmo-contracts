@@ -25,4 +25,44 @@ contract TestBytes {
             "Should decode address of 5 bytes"
         );
     }
+
+    function testShrink() external {
+        address a = address(0x000000000000000000000000000000fAa21D387c);
+        bytes memory ashrunk = Bytes.shrink(a);
+        Assert.equal(
+            keccak256(hex"faa21d387c"),
+            keccak256(ashrunk),
+            "Should shrink the address"
+        );
+        Assert.equal(
+            Bytes.toAddress(ashrunk),
+            a,
+            "Should shrink and expand address"
+        );
+    }
+
+    function testShirnkSetFloor() external {
+        bytes memory ashrunk;
+        for(uint256 i = 0; i < 950; i++) {
+            ashrunk = Bytes.shrink(address(i));
+            Assert.equal(
+                address(i),
+                Bytes.toAddress(ashrunk),
+                "Should shrink and expand address"
+            );
+        }
+    }
+
+    function testShirnkSetCeiling() external {
+        bytes memory ashrunk;
+        uint256 to = (uint256(0) - 1) - 950;
+        for(uint256 i = (uint256(0) - 1); i > to; i--) {
+            ashrunk = Bytes.shrink(address(i));
+            Assert.equal(
+                address(i),
+                Bytes.toAddress(ashrunk),
+                "Should shrink and expand address"
+            );
+        }
+    }
 }
