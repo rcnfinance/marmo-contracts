@@ -6,6 +6,7 @@ const TestERC20 = artifacts.require('./TestERC20.sol');
 const TestERC721 = artifacts.require('./TestERC721.sol');
 const TestOutOfGasContract = artifacts.require('./TestOutOfGasContract.sol');
 const TestTransfer = artifacts.require('./TestTransfer.sol');
+const TestSelfDestruct = artifacts.require('./TestSelfDestruct.sol');
 
 const eutils = require('ethereumjs-util');
 const Helper = require('./Helper.js');
@@ -81,6 +82,7 @@ contract('Marmo wallets', function (accounts) {
     let testToken;
     let testToken721;
     let depsUtils;
+    let destructImp;
 
     before(async function () {
         // Validate test node
@@ -96,6 +98,7 @@ contract('Marmo wallets', function (accounts) {
         marmoImp = await MarmoImp.new();
         depsUtils = await DepsUtils.new();
         testToken = await TestERC20.new();
+        destructImp = await TestSelfDestruct.new();
         testToken721 = await TestERC721.new();
     });
     describe('Create marmo wallets', function () {
@@ -1563,6 +1566,129 @@ contract('Marmo wallets', function (accounts) {
 
             await testToken721.safeTransferFrom(accounts[0], wallet.address, token, { from: accounts[0] });
             (await testToken721.ownerOf(token)).should.be.equals(wallet.address);
+        });
+    });
+    describe('Destroy', function () {
+        it('Wallet is destroyable', async function () {
+            // Reveal wallet
+            await creator.reveal(accounts[6]);
+            const wallet = await Marmo.at(await creator.marmoOf(accounts[6]));
+
+            // Set balance and transfer
+            await testToken.setBalance(wallet.address, 10);
+            const dependencies = '0x';
+            const to = testToken.address;
+            const value = 0;
+            const data = web3.eth.abi.encodeFunctionCall({
+                name: 'transfer',
+                type: 'function',
+                inputs: [{
+                    type: 'address',
+                    name: 'to',
+                }, {
+                    type: 'uint256',
+                    name: 'value',
+                }],
+            }, [accounts[9], 2]);
+
+            const minGasLimit = bn(2000000);
+            const maxGasPrice = bn(10).pow(bn(32));
+            const expiration = await Helper.getBlockTime() + 60;
+            let salt = '0x';
+
+            let callData = encodeImpData(
+                dependencies,
+                to,
+                value,
+                data,
+                minGasLimit,
+                maxGasPrice,
+                salt,
+                expiration
+            );
+
+            let id = calcId(
+                wallet.address,
+                marmoImp.address,
+                callData
+            );
+
+            let signature = signHash(id, privs[6]);
+            await wallet.relay(
+                marmoImp.address,
+                callData,
+                signature
+            );
+
+            const ogcalldata = callData;
+            const ogsignature = signature;
+
+            (await testToken.balanceOf(wallet.address)).should.be.a.bignumber.that.equals(bn(8));
+
+            // Destroy wallet
+            id = calcId(
+                wallet.address,
+                destructImp.address,
+                '0x00'
+            );
+
+            await wallet.relay(
+                destructImp.address,
+                '0x00',
+                signHash(id, privs[6])
+            );
+
+            // Wallet should be destroyed
+            // should fail to send tokens
+            salt = '0x01';
+            callData = encodeImpData(
+                dependencies,
+                to,
+                value,
+                data,
+                minGasLimit,
+                maxGasPrice,
+                salt,
+                expiration
+            );
+
+            id = calcId(
+                wallet.address,
+                marmoImp.address,
+                callData
+            );
+
+            signature = signHash(id, privs[6]);
+            await wallet.relay(
+                marmoImp.address,
+                callData,
+                signature
+            );
+
+            // token count remains the same
+            (await testToken.balanceOf(wallet.address)).should.be.a.bignumber.that.equals(bn(8));
+
+            // Recreate wallet
+            await creator.reveal(accounts[6]);
+
+            // Relay token send
+            await wallet.relay(
+                marmoImp.address,
+                callData,
+                signature
+            );
+
+            (await testToken.balanceOf(wallet.address)).should.be.a.bignumber.that.equals(bn(6));
+
+            // WARNING
+            // Loses replay protection and receipts of previous intents
+            await wallet.relay(
+                marmoImp.address,
+                ogcalldata,
+                ogsignature
+            );
+
+            (await testToken.balanceOf(wallet.address)).should.be.a.bignumber.that.equals(bn(4));
         });
     });
 });
