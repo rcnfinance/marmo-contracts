@@ -64,6 +64,7 @@ library Bytes {
         }
     }
 
+    // Returns the most significant bit of a given uint256
     function mostSignificantBit(uint256 x) internal pure returns (uint256) {        
         uint8 o = 0;
         uint8 h = 255;
@@ -79,6 +80,7 @@ library Bytes {
         return h;
     }
 
+    // Shrinks a given address to the minimal representation in a bytes array
     function shrink(address _a) internal pure returns (bytes memory b) {
         uint256 abits = mostSignificantBit(uint256(_a)) + 1;
         uint256 abytes = abits / 8 + (abits % 8 == 0 ? 0 : 1);

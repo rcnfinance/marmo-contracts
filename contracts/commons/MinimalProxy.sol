@@ -19,6 +19,8 @@ library MinimalProxy {
     bytes1 constant PUSH_1 = 0x60;
     bytes1 constant BASE_RETURN_JUMP = 0x1b;
 
+    // Returns the Init code to create a
+    // Minimal proxy pointing to a given address
     function build(address _address) internal pure returns (bytes memory initCode) {
         return build(Bytes.shrink(_address));
     }
