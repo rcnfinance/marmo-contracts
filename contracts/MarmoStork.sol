@@ -1,7 +1,6 @@
 pragma solidity ^0.5.0;
 
 import "./Marmo.sol";
-import "./commons/Bytes.sol";
 import "./commons/MinimalProxy.sol";
 
 
@@ -25,9 +24,7 @@ contract MarmoStork {
 
     // Creates a new MarmoStork (Marmo wallet Factory)
     // with wallets pointing to the _source contract reference
-    // notice: _source may contain less than 20 bytes
-    // the difference will be filled with 0s at the beginning of the address
-    constructor(bytes memory _source) public {
+    constructor(address payable _source) public {
         // Generate and save wallet creator bytecode using the provided '_source'
         bytecode = MinimalProxy.build(_source);
 
@@ -35,7 +32,7 @@ contract MarmoStork {
         hash = keccak256(bytecode);
         
         // Destroy the '_source' provided, if is not destroyed
-        Marmo marmoc = Marmo(Bytes.toAddress(_source));
+        Marmo marmoc = Marmo(_source);
         if (marmoc.signer() == address(0)) {
             marmoc.init(address(65536));
         }

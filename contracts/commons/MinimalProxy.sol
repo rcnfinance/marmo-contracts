@@ -4,7 +4,6 @@ import "./Bytes.sol";
 
 
 library MinimalProxy {
-    using Bytes for address;
     using Bytes for bytes1;
     using Bytes for bytes;
 
@@ -20,7 +19,14 @@ library MinimalProxy {
     bytes1 constant PUSH_1 = 0x60;
     bytes1 constant BASE_RETURN_JUMP = 0x1b;
 
-    function build(bytes memory _address) internal pure returns (bytes memory initCode) {
+    // Returns the Init code to create a
+    // Minimal proxy pointing to a given address
+    function build(address _address) internal pure returns (bytes memory initCode) {
+        return build(Bytes.shrink(_address));
+    }
+
+    function build(bytes memory _address) private pure returns (bytes memory initCode) {
+        require(_address.length <= 20, "Address too long");
         initCode = Bytes.concat(
             CODE1,
             BASE_SIZE.plus(_address.length).toBytes(),
