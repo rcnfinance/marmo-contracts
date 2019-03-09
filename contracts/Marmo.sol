@@ -100,7 +100,7 @@ contract Marmo {
         address _signer = signer();
 
         // The signer 'INVALID_ADDRESS' is considered invalid and it will always throw
-        // this is meant to destroy the wallet safely
+        // this is meant to disable the wallet safely
         require(_signer != INVALID_ADDRESS, "Signer is not a valid address");
 
         // Validate is the msg.sender is the signer or if the provided signature is valid
