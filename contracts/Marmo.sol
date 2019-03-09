@@ -12,8 +12,9 @@ contract Marmo {
     event Relayed(bytes32 indexed _id, address _implementation, bytes _data);
     event Canceled(bytes32 indexed _id);
 
-    // Invalid signer address, outside of restricted address range (0 - 65535)
-    address private constant INVALID_ADDRESS = address(65536);
+    // Random Invalid signer address
+    // Intents signed with this address are invalid
+    address private constant INVALID_ADDRESS = address(0x9431Bab00000000000000000000000039bD955c9);
 
     // Random slot to store signer
     bytes32 private constant SIGNER_SLOT = keccak256("marmo.wallet.signer");
@@ -100,7 +101,7 @@ contract Marmo {
 
         // The signer 'INVALID_ADDRESS' is considered invalid and it will always throw
         // this is meant to destroy the wallet safely
-        assert(_signer != INVALID_ADDRESS);
+        require(_signer != INVALID_ADDRESS, "Signer is not a valid address");
 
         // Validate is the msg.sender is the signer or if the provided signature is valid
         require(_signer == msg.sender || _signer == SigUtils.ecrecover2(id, _signature), "Invalid signature");
@@ -138,6 +139,7 @@ contract Marmo {
             revert("Unknown error");
         }
 
+        emit Canceled(_id);
         intentReceipt[_id] = _encodeReceipt(true, 0, address(0));
     }
 
@@ -168,5 +170,10 @@ contract Marmo {
             _block := and(shr(160, _receipt), 0x7fffffffffffffffffffffff)
             _relayer := and(_receipt, 0xffffffffffffffffffffffffffffffffffffffff)
         }
+    }
+
+    // Used to receive ERC721 tokens
+    function onERC721Received(address, address, uint256, bytes calldata) external pure returns (bytes4) {
+        return bytes4(0x150b7a02);
     }
 }

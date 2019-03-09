@@ -3,6 +3,7 @@ const MarmoImp = artifacts.require('./MarmoImp.sol');
 const MarmoStork = artifacts.require('./MarmoStorkAuto.sol');
 const DepsUtils = artifacts.require('./DepsUtils.sol');
 const TestERC20 = artifacts.require('./TestERC20.sol');
+const TestERC721 = artifacts.require('./TestERC721.sol');
 const TestOutOfGasContract = artifacts.require('./TestOutOfGasContract.sol');
 const TestTransfer = artifacts.require('./TestTransfer.sol');
 const TestSelfDestruct = artifacts.require('./TestSelfDestruct.sol');
@@ -79,6 +80,7 @@ contract('Marmo wallets', function (accounts) {
     let creator;
     let marmoImp;
     let testToken;
+    let testToken721;
     let depsUtils;
     let destructImp;
 
@@ -97,6 +99,7 @@ contract('Marmo wallets', function (accounts) {
         depsUtils = await DepsUtils.new();
         testToken = await TestERC20.new();
         destructImp = await TestSelfDestruct.new();
+        testToken721 = await TestERC721.new();
     });
     describe('Create marmo wallets', function () {
         it('Should reveal the marmo wallet', async function () {
@@ -1525,7 +1528,7 @@ contract('Marmo wallets', function (accounts) {
                 type: 'bytes',
                 name: '_result',
                 indexed: true,
-            }], cancelReceipt1.receipt.rawLogs[1].data, []);
+            }], cancelReceipt1.receipt.rawLogs[2].data, []);
 
             (log1._success).should.be.equals(true);
 
@@ -1552,6 +1555,17 @@ contract('Marmo wallets', function (accounts) {
             await transferUtil.transfer(rwallet, { from: accounts[9], value: 100 });
 
             bn(await web3.eth.getBalance(rwallet)).should.be.a.bignumber.that.equals(bn(100));
+        });
+        it('Should receive ERC721 tokens', async function () {
+            const token = 3581591738;
+            await testToken721.mint(accounts[0], token);
+
+            (await testToken721.ownerOf(token)).should.be.equals(accounts[0]);
+
+            const wallet = await Marmo.at(await creator.marmoOf(accounts[1]));
+
+            await testToken721.safeTransferFrom(accounts[0], wallet.address, token, { from: accounts[0] });
+            (await testToken721.ownerOf(token)).should.be.equals(wallet.address);
         });
     });
     describe('Destroy', function () {
