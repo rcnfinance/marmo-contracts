@@ -1556,11 +1556,11 @@ contract('Marmo wallets', function (accounts) {
         it('Should receive ERC721 tokens', async function () {
             const token = 3581591738;
             await testToken721.mint(accounts[0], token);
-            
+
             (await testToken721.ownerOf(token)).should.be.equals(accounts[0]);
 
             const wallet = await Marmo.at(await creator.marmoOf(accounts[1]));
-            
+
             await testToken721.safeTransferFrom(accounts[0], wallet.address, token, { from: accounts[0] });
             (await testToken721.ownerOf(token)).should.be.equals(wallet.address);
         });
