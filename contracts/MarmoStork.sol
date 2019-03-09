@@ -11,6 +11,10 @@ import "./commons/MinimalProxy.sol";
 // All wallets are proxies pointing to a single
 // source contract, to make deployment costs viable
 contract MarmoStork {
+    // Random Invalid signer address
+    // Intents signed with this address are invalid
+    address private constant INVALID_ADDRESS = address(0x9431Bab00000000000000000000000039bD955c9);
+
     // Bytecode to deploy marmo wallets
     bytes public bytecode;
 
@@ -34,11 +38,11 @@ contract MarmoStork {
         // Destroy the '_source' provided, if is not destroyed
         Marmo marmoc = Marmo(_source);
         if (marmoc.signer() == address(0)) {
-            marmoc.init(address(65536));
+            marmoc.init(INVALID_ADDRESS);
         }
 
         // Validate, the signer of _source should be "INVALID_ADDRESS" (destroyed)
-        require(marmoc.signer() == address(65536), "Error init Marmo source");
+        require(marmoc.signer() == INVALID_ADDRESS, "Error init Marmo source");
 
         // Save the _source address, casting to address (160 bits)
         marmo = address(marmoc);
