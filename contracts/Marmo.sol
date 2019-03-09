@@ -138,6 +138,7 @@ contract Marmo {
             revert("Unknown error");
         }
 
+        emit Canceled(_id);
         intentReceipt[_id] = _encodeReceipt(true, 0, address(0));
     }
 
