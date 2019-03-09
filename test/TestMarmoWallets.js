@@ -1522,7 +1522,7 @@ contract('Marmo wallets', function (accounts) {
                 type: 'bytes',
                 name: '_result',
                 indexed: true,
-            }], cancelReceipt1.receipt.rawLogs[1].data, []);
+            }], cancelReceipt1.receipt.rawLogs[2].data, []);
 
             (log1._success).should.be.equals(true);
 
