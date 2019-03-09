@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity ^0.5.5;
 
 // Bytes library to concat and transform
 // bytes arrays

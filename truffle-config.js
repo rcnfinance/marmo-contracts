@@ -9,11 +9,11 @@ module.exports = {
     },
     compilers: {
         solc: {
-            version: '0.5.2',
+            version: '0.5.5',
             docker: false,
             settings: {
                 optimizer: {
-                    enabled: false,
+                    enabled: true,
                     runs: 200,
                 },
                 evmVersion: 'constantinople',
