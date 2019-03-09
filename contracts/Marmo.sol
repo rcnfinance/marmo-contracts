@@ -170,4 +170,9 @@ contract Marmo {
             _relayer := and(_receipt, 0xffffffffffffffffffffffffffffffffffffffff)
         }
     }
+
+    // Used to receive ERC721 tokens
+    function onERC721Received(address, address, uint256, bytes calldata) external pure returns (bytes4) {
+        return bytes4(0x150b7a02);
+    }
 }
