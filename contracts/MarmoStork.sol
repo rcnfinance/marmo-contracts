@@ -15,6 +15,9 @@ contract MarmoStork {
     // Intents signed with this address are invalid
     address private constant INVALID_ADDRESS = address(0x9431Bab00000000000000000000000039bD955c9);
 
+    // Prefix of create2 address formula (EIP-1014)
+    bytes1 private constant CREATE2_PREFIX = byte(0xff);
+
     // Bytecode to deploy marmo wallets
     bytes public bytecode;
 
@@ -56,7 +59,7 @@ contract MarmoStork {
             uint256(
                 keccak256(
                     abi.encodePacked(
-                        byte(0xff),
+                        CREATE2_PREFIX,
                         address(this),
                         bytes32(uint256(_signer)),
                         hash
