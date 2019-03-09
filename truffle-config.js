@@ -3,6 +3,7 @@ module.exports = {
         development: {
             host: '127.0.0.1',
             port: 8545,
+            // eslint-disable-next-line camelcase
             network_id: '*',
         },
     },
