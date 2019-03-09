@@ -101,7 +101,7 @@ contract Marmo {
 
         // The signer 'INVALID_ADDRESS' is considered invalid and it will always throw
         // this is meant to destroy the wallet safely
-        assert(_signer != INVALID_ADDRESS);
+        require(_signer != INVALID_ADDRESS, "Signer is not a valid address");
 
         // Validate is the msg.sender is the signer or if the provided signature is valid
         require(_signer == msg.sender || _signer == SigUtils.ecrecover2(id, _signature), "Invalid signature");
