@@ -1554,8 +1554,8 @@ contract('Marmo wallets', function (accounts) {
             bn(await web3.eth.getBalance(rwallet)).should.be.a.bignumber.that.equals(bn(100));
         });
     });
-    describe("Destroy", function () {
-        it("Wallet is destroyable", async function () {
+    describe('Destroy', function () {
+        it('Wallet is destroyable', async function () {
             // Reveal wallet
             await creator.reveal(accounts[6]);
             const wallet = await Marmo.at(await creator.marmoOf(accounts[6]));
@@ -1615,18 +1615,18 @@ contract('Marmo wallets', function (accounts) {
             id = calcId(
                 wallet.address,
                 destructImp.address,
-                "0x00"
+                '0x00'
             );
 
             await wallet.relay(
                 destructImp.address,
-                "0x00",
+                '0x00',
                 signHash(id, privs[6])
-            )
+            );
 
             // Wallet should be destroyed
             // should fail to send tokens
-            salt = "0x01";
+            salt = '0x01';
             callData = encodeImpData(
                 dependencies,
                 to,
@@ -1637,7 +1637,7 @@ contract('Marmo wallets', function (accounts) {
                 salt,
                 expiration
             );
-            
+
             id = calcId(
                 wallet.address,
                 marmoImp.address,
