@@ -38,13 +38,13 @@ contract MarmoStork {
         // Precalculate init_code hash
         hash = keccak256(bytecode);
         
-        // Destroy the '_source' provided, if is not destroyed
+        // Destroy the '_source' provided, if is not disabled
         Marmo marmoc = Marmo(_source);
         if (marmoc.signer() == address(0)) {
             marmoc.init(INVALID_ADDRESS);
         }
 
-        // Validate, the signer of _source should be "INVALID_ADDRESS" (destroyed)
+        // Validate, the signer of _source should be "INVALID_ADDRESS" (disabled)
         require(marmoc.signer() == INVALID_ADDRESS, "Error init Marmo source");
 
         // Save the _source address, casting to address (160 bits)
