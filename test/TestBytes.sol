@@ -65,4 +65,71 @@ contract TestBytes {
             );
         }
     }
+
+    function testConcatSmall() external {
+        bytes memory a = hex"7302";
+        bytes memory b = hex"29c2fbf7b3";
+        Assert.equal(
+            keccak256(Bytes.concat(a, b)),
+            keccak256(bytes(hex"730229c2fbf7b3")),
+            "Should concat bytes"
+        );
+    }
+
+    function testConcatEmpty() external {
+        bytes memory a = hex"7302";
+        bytes memory b = hex"";
+        Assert.equal(
+            keccak256(Bytes.concat(a, b)),
+            keccak256(bytes(hex"7302")),
+            "Should concat bytes"
+        );
+        Assert.equal(
+            keccak256(Bytes.concat(b, a)),
+            keccak256(bytes(hex"7302")),
+            "Should concat bytes"
+        );
+    }
+
+    function testConcatLarge() external {
+        bytes memory a = hex"0a095992a7429c2fbf7b3754ab4b09f270f34c327ce004ab3b2906f7c3573027";
+        bytes memory b = hex"14970b8815c3da10bbeb31c1d3e330009950ca47aa145b37356f62ca7a4bef40";
+        Assert.equal(
+            keccak256(Bytes.concat(a, b)),
+            keccak256(bytes(hex"0a095992a7429c2fbf7b3754ab4b09f270f34c327ce004ab3b2906f7c357302714970b8815c3da10bbeb31c1d3e330009950ca47aa145b37356f62ca7a4bef40")),
+            "Should concat bytes"
+        );
+    }
+
+    function testConcatLarge2() external {
+        bytes memory a = hex"0a095992a7429c2fbf7b3754ab4b09f270f34c327ce004ab3b2906f7c3573027e004ab3b2906f7c3573027";
+        bytes memory b = hex"000995014970b8815c3da10bbeb31c1d3e330009950ca47aa145b37356f62ca7a4bef4";
+        Assert.equal(
+            keccak256(Bytes.concat(a, b)),
+            keccak256(bytes(hex"0a095992a7429c2fbf7b3754ab4b09f270f34c327ce004ab3b2906f7c3573027e004ab3b2906f7c3573027000995014970b8815c3da10bbeb31c1d3e330009950ca47aa145b37356f62ca7a4bef4")),
+            "Should concat bytes"
+        );
+    }
+
+    function testConcatSix() external {
+        bytes memory b1 = hex"A1";
+        bytes memory b2 = hex"B2";
+        bytes memory b3 = hex"C3";
+        bytes memory b4 = hex"D4";
+        bytes memory b5 = hex"E5";
+        bytes memory b6 = hex"F6";
+
+        Assert.equal(
+            keccak256(Bytes.concat(
+                b1,
+                b2,
+                b3,
+                b4,
+                b5,
+                b6
+            )),
+            keccak256(bytes(hex"A1B2C3D4E5F6")),
+            "Should concat bytes six"
+        );
+    }
 }
